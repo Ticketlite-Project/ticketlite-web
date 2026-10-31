@@ -96,3 +96,54 @@ export function CustomButton(props: CustomButtonProps) {
         </Button>
     )
 }
+
+// <CustomButton variant="primary" fullWidth>
+//                 Save
+//             </CustomButton>
+
+//             <CustomButton variant="primary" bordered rounded>
+//                 Save
+//             </CustomButton>
+
+//             <CustomButton variant="secondary" icon={<Plus />} rounded bordered>
+//                 Add item
+//             </CustomButton>
+
+//             <CustomButton variant="danger" icon={<Trash2 />}>
+//                 Delete
+//             </CustomButton>
+
+//             <CustomButton variant="valid" bordered rounded icon={<Check />}>
+//                 Approve
+//             </CustomButton>
+
+//             <CustomButton
+//                 variant="already"
+//                 rounded
+//                 to="https://example.com"
+//                 target="_blank"
+//                 iconRight={<ArrowRight />}
+//             >
+//                 Continue
+//             </CustomButton>
+
+//             <CustomButton variant="primary" loading>
+//                 Saving…
+//             </CustomButton>
+
+//             <CustomButton
+//                 variant="primary"
+//                 size="lg"
+//             >
+//                 Continue to Checkout
+//             </CustomButton>
+
+//             <CustomButton variant="secondary" to="/dashboard" bordered>
+//                 Dashboard
+//             </CustomButton>
+
+//             <form>
+//                 <CustomButton variant="primary" type="submit">
+//                     Submit
+//                 </CustomButton>
+//             </form>

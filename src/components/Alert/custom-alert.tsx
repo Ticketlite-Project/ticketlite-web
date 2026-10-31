@@ -91,3 +91,41 @@ export function CustomAlert({
         </Alert>
     )
 }
+
+    // <CustomAlert
+    //             type="primary"
+    //             icon={<CheckCircle2 />}
+    //             title="Success"
+    //             largeIcon
+    //             description="Your changes have been saved."
+    //         />
+
+    //         <CustomAlert
+    //             type="primary"
+    //             icon={<CheckCircle2 />}
+    //             title="Payment confirmed"
+    //             description="Your order #1234 has been processed."
+    //             boldTitle
+    //             largeIcon
+    //             bordered={false}
+    //         />
+
+    //         <CustomAlert type="secondary" title="Heads up" />
+
+    //         <CustomAlert
+    //             type="danger"
+    //             icon={<AlertTriangle />}
+    //             className="border border-black"
+    //             description="Something went wrong. Please try again."
+    //         />
+
+    //         <CustomAlert
+    //             type="danger"
+    //             icon={<AlertTriangle />}
+    //             title="Email or Password is wrong"
+    //             description="Check both and try again. After 5 tries, logging in pauses for 10 minutes."
+    //             bordered={true}
+    //             largeIcon
+    //             boldTitle
+    //         />
+
