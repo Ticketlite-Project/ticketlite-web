@@ -13,6 +13,9 @@ import { CustomButton } from './components/Button/custom-button'
 function App() {
     return (
         <section className="flex min-h-screen flex-col items-center justify-center gap-4">
+            <div>
+                <h1 className="font-bold text-2xl">TicketLite</h1>
+            </div>
             <CustomAlert
                 type="primary"
                 icon={<CheckCircle2 />}
@@ -86,16 +89,13 @@ function App() {
 
             <CustomButton
                 variant="primary"
-                fullWidth
                 size="lg"
-                rounded
-                bordered
             >
-                Checkout
+                Continue to Checkout
             </CustomButton>
 
             <CustomButton variant="secondary" to="/dashboard" bordered>
-                Go to dashboard
+                Dashboard
             </CustomButton>
 
             <form>

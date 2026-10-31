@@ -9,7 +9,7 @@ export const buttonVariantStyles: Record<
     }
 > = {
     primary: {
-        base: 'bg-green-600 text-white hover:bg-green-700 active:bg-green-800',
+        base: 'bg-green-700 text-white hover:bg-green-700 active:bg-green-800',
         border: 'border border-green-700',
         ring: 'focus-visible:ring-green-500',
     },
