@@ -24,7 +24,11 @@ export function CustomButton(props: CustomButtonProps) {
 
     const classes = cn(
         'relative',
+        'padding-x-4 padding-y-2',
         'rounded-none',
+        'font-bold',
+        'uppercase',
+        'tracking-wide',
         styles.base,
         styles.ring,
         sizeStyles[size],

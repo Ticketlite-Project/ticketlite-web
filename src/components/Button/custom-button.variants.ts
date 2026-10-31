@@ -3,9 +3,9 @@ import type { ButtonVariant } from './custom-button.type'
 export const buttonVariantStyles: Record<
     ButtonVariant,
     {
-        base: string // solid / outline colors
-        border: string // border color when `bordered` is true
-        ring: string // focus ring color
+        base: string
+        border: string
+        ring: string
     }
 > = {
     primary: {

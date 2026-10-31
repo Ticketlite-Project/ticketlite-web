@@ -9,17 +9,11 @@ export type ButtonSize = 'sm' | 'md' | 'lg'
 interface BaseProps {
     variant?: ButtonVariant
     size?: ButtonSize
-    /** Show a border in the variant's accent color */
     bordered?: boolean
-    /** Rounded corners (default: square) */
     rounded?: boolean
-    /** Icon rendered before the label */
     icon?: ReactNode
-    /** Icon rendered after the label */
     iconRight?: ReactNode
-    /** Stretch to fill parent width */
     fullWidth?: boolean
-    /** Show spinner and disable interactions */
     loading?: boolean
     className?: string
     children?: ReactNode

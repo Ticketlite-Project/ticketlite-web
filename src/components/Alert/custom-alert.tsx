@@ -8,7 +8,7 @@ export function CustomAlert({
     title,
     description,
     icon,
-    bordered = true,
+    bordered = false,
     boldTitle = false,
     largeIcon = false,
     className,
@@ -45,8 +45,8 @@ export function CustomAlert({
                         'shrink-0',
                         styles.iconColor,
                         largeIcon
-                            ? 'row-span-full self-start [&>svg]:size-6 [&>svg]:sm:size-7'
-                            : '[&>svg]:size-4'
+                            ? 'row-span-full self-start [&>svg]:size-7 [&>svg]:sm:size-8'
+                            : 'row-span-full self-start [&>svg]:size-6 [&>svg]:sm:size-7'
                     )}
                     aria-hidden="true"
                 >

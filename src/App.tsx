@@ -17,6 +17,7 @@ function App() {
                 type="primary"
                 icon={<CheckCircle2 />}
                 title="Success"
+                largeIcon
                 description="Your changes have been saved."
             />
 
@@ -35,20 +36,23 @@ function App() {
             <CustomAlert
                 type="danger"
                 icon={<AlertTriangle />}
+                className="border border-black"
                 description="Something went wrong. Please try again."
-                bordered={false}
             />
 
             <CustomAlert
                 type="danger"
                 icon={<AlertTriangle />}
-                title="Deletion failed"
-                description="We couldn't delete the resource."
+                title="Email or Password is wrong"
+                description="Check both and try again. After 5 tries, logging in pauses for 10 minutes."
+                bordered={true}
                 largeIcon
                 boldTitle
             />
 
-            <CustomButton variant="primary">Save</CustomButton>
+            <CustomButton variant="primary" fullWidth>
+                Save
+            </CustomButton>
 
             <CustomButton variant="primary" bordered rounded>
                 Save

@@ -10,6 +10,6 @@ export interface CustomAlertProps {
     bordered?: boolean
     boldTitle?: boolean
     largeIcon?: boolean
-    className?: StringConstructor
+    className?: string
     children?: ReactNode
 }
