@@ -1,0 +1,61 @@
+.auth-header {
+  width: 100%;
+  background: #ffffff;
+}
+
+.auth-brand {
+  height: 68px;
+  padding: 0 22px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.auth-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: #8acb38;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 18px;
+  border-radius: 4px;
+}
+
+.auth-brand-name {
+  color: #00875a;
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.auth-tabs {
+  display: flex;
+  width: calc(100% - 40px);
+  margin: 22px 20px 0;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 16px 10px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: #555555;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.auth-tab.active {
+  color: #111111;
+  border-bottom-color: #00875a;
+}
+
+.auth-tab:focus-visible {
+  outline: 2px solid #00875a;
+  outline-offset: 2px;
+}
