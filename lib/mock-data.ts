@@ -1,0 +1,219 @@
+export type TicketType = {
+    id: string
+    name: string
+    description?: string
+    price: number
+    currency: string
+    available: number
+    maxPerOrder?: number
+    lowStockThreshold?: number
+}
+
+export type EventData = {
+    id: string
+    title: string
+    category: string // e.g., "Music", "Tech & Meetups"
+    type: string // For the top filter icons, e.g., "music", "tech"
+    date: string // Display date
+    startDate: Date // For sorting
+    time: string
+    location: string
+    venueName: string
+    address: string[]
+    organizer: string
+    bannerUrl?: string
+    description: string
+    doorsOpen: string
+    entryType: string
+    isSellingFast?: boolean
+    isFewLeft?: boolean
+    isSoldOut?: boolean
+    priceFrom: number
+    maxTicketsPerOrder: number
+    ticketTypes: TicketType[]
+}
+
+export const mockEvents: EventData[] = [
+    {
+        id: 'evt_123',
+        title: 'Campus Jazz Night',
+        category: 'Music',
+        type: 'music',
+        date: 'Saturday 14 November 2026',
+        startDate: new Date('2026-11-14T19:00:00'),
+        time: '7:00 PM',
+        location: 'Great Hall, KNUST · Kumasi',
+        venueName: 'Great Hall, KNUST',
+        address: [
+            'Kwame Nkrumah University of Science and Technology',
+            'Kumasi, Ashanti Region',
+        ],
+        organizer: 'KNUST Music Society',
+        description:
+            "[Organiser's event description goes here: line-up, what to expect, dress code and anything attendees should bring.]",
+        doorsOpen: '6:30 PM',
+        entryType: 'QR ticket',
+        isSellingFast: true,
+        priceFrom: 40.0,
+        maxTicketsPerOrder: 6,
+        ticketTypes: [
+            {
+                id: 'tkt_regular',
+                name: 'Regular',
+                price: 40.0,
+                currency: 'GHS',
+                available: 128,
+            },
+            {
+                id: 'tkt_vip',
+                name: 'VIP - front rows + drink',
+                price: 100.0,
+                currency: 'GHS',
+                available: 12,
+                lowStockThreshold: 20,
+            },
+        ],
+    },
+    {
+        id: 'evt_124',
+        title: 'Accra Tech Meetup: Building for Mobile Money',
+        category: 'Tech & Meetups',
+        type: 'tech',
+        date: 'Thursday 12 November 2026',
+        startDate: new Date('2026-11-12T18:00:00'),
+        time: '6:00 PM',
+        location: 'Impact Hub, Osu · Accra',
+        venueName: 'Impact Hub, Osu',
+        address: ['Impact Hub', 'Osu, Accra'],
+        organizer: 'Accra Devs',
+        description:
+            'Join us for an evening of discussions on fintech and mobile money integration.',
+        doorsOpen: '5:30 PM',
+        entryType: 'QR ticket',
+        priceFrom: 20.0,
+        maxTicketsPerOrder: 4,
+        ticketTypes: [
+            {
+                id: 'tkt_standard',
+                name: 'Standard',
+                price: 20.0,
+                currency: 'GHS',
+                available: 50,
+            },
+        ],
+    },
+    {
+        id: 'evt_125',
+        title: 'Harvest Thanksgiving Concert',
+        category: 'Church',
+        type: 'church',
+        date: 'Sunday 22 November 2026',
+        startDate: new Date('2026-11-22T15:00:00'),
+        time: '3:00 PM',
+        location: 'Calvary Methodist, Adabraka · Accra',
+        venueName: 'Calvary Methodist',
+        address: ['Calvary Methodist', 'Adabraka, Accra'],
+        organizer: 'Calvary Choir',
+        description: 'A night of worship and thanksgiving.',
+        doorsOpen: '2:30 PM',
+        entryType: 'QR ticket',
+        priceFrom: 30.0,
+        maxTicketsPerOrder: 10,
+        ticketTypes: [
+            {
+                id: 'tkt_general',
+                name: 'General',
+                price: 30.0,
+                currency: 'GHS',
+                available: 200,
+            },
+        ],
+    },
+    {
+        id: 'evt_126',
+        title: 'Inter-Hall Football Final',
+        category: 'Sports',
+        type: 'sports',
+        date: 'Saturday 21 November 2026',
+        startDate: new Date('2026-11-21T14:00:00'),
+        time: '2:00 PM',
+        location: 'Legon Sports Stadium · Accra',
+        venueName: 'Legon Sports Stadium',
+        address: ['University of Ghana', 'Legon, Accra'],
+        organizer: 'UG Sports Council',
+        description: 'The ultimate showdown between the top two halls.',
+        doorsOpen: '1:00 PM',
+        entryType: 'QR ticket',
+        priceFrom: 15.0,
+        maxTicketsPerOrder: 5,
+        ticketTypes: [
+            {
+                id: 'tkt_regular',
+                name: 'Regular',
+                price: 15.0,
+                currency: 'GHS',
+                available: 500,
+            },
+        ],
+    },
+    {
+        id: 'evt_127',
+        title: 'Cape Coast Poetry & Spoken Word',
+        category: 'Arts & Culture',
+        type: 'arts',
+        date: 'Friday 20 November 2026',
+        startDate: new Date('2026-11-20T18:30:00'),
+        time: '6:30 PM',
+        location: 'Centre for National Culture · Cape Coast',
+        venueName: 'Centre for National Culture',
+        address: ['Centre for National Culture', 'Cape Coast'],
+        organizer: 'Poetry GH',
+        description: 'An evening of rhythm, words, and culture.',
+        doorsOpen: '6:00 PM',
+        entryType: 'QR ticket',
+        isFewLeft: true,
+        priceFrom: 50.0,
+        maxTicketsPerOrder: 2,
+        ticketTypes: [
+            {
+                id: 'tkt_regular',
+                name: 'Regular',
+                price: 50.0,
+                currency: 'GHS',
+                available: 8,
+                lowStockThreshold: 15,
+            },
+        ],
+    },
+    {
+        id: 'evt_128',
+        title: 'Year-End Afrobeats Jam',
+        category: 'Music',
+        type: 'music',
+        date: 'Saturday 19 December 2026',
+        startDate: new Date('2026-12-19T20:00:00'),
+        time: '8:00 PM',
+        location: 'Labadi Beach · Accra',
+        venueName: 'Labadi Beach',
+        address: ['Labadi Beach', 'Accra'],
+        organizer: 'Afro Nation',
+        description: 'Closing out the year with the biggest Afrobeats hits.',
+        doorsOpen: '7:00 PM',
+        entryType: 'QR ticket',
+        isSoldOut: true,
+        priceFrom: 120.0,
+        maxTicketsPerOrder: 4,
+        ticketTypes: [
+            {
+                id: 'tkt_vip',
+                name: 'VIP',
+                price: 120.0,
+                currency: 'GHS',
+                available: 0,
+            },
+        ],
+    },
+]
+
+// Keep the single event export for the Event Details page
+export const mockEvent = mockEvents[0]
