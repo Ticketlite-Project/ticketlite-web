@@ -1,0 +1,211 @@
+// src/pages/EventDetails.tsx
+import { mockEvent } from '@/lib/mock-data'
+import TicketSelector from '@/src/components/TicketSelector/ticket-selector'
+import { ArrowRight, Calendar, Image as ImageIcon, MapPin } from 'lucide-react'
+import { useEffect } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+
+export default function EventDetails() {
+    const { id } = useParams<{ id: string }>()
+    const navigate = useNavigate()
+
+    // Derive the event synchronously - no state or effect needed for static mock data
+    const event = mockEvent.id === id ? mockEvent : null
+
+    // Handle 404 navigation in an effect (external system sync)
+    useEffect(() => {
+        if (!event) {
+            navigate('/404')
+        }
+    }, [event, navigate])
+
+    if (!event) return null
+
+    return (
+        <div className="min-h-screen bg-gray-50 pb-20 font-sans">
+            {/* Header Section */}
+            <header className="bg-[#2b7a56] text-white pt-8 pb-12 px-4 md:px-8">
+                <div className="max-w-6xl mx-auto">
+                    <div className="text-xs font-medium text-green-100 mb-4 flex gap-2">
+                        <Link to="/events" className="hover:underline">
+                            Events
+                        </Link>
+                        <span>›</span>
+                        <span>{event.category}</span>
+                        <span>›</span>
+                        <span className="text-white">{event.title}</span>
+                    </div>
+
+                    {event.isSellingFast && (
+                        <span className="inline-block bg-[#b3e6a1] text-[#1a5c38] text-xs font-bold px-3 py-1 rounded-full mb-4">
+                            SELLING FAST
+                        </span>
+                    )}
+
+                    <h1 className="text-4xl md:text-5xl font-extrabold mb-6">
+                        {event.title}
+                    </h1>
+
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 text-sm md:text-base">
+                        <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-8 text-green-50">
+                            <p className="flex items-center gap-2">
+                                <Calendar className="w-5 h-5" />
+                                {event.date} · {event.time}
+                            </p>
+                            <p className="flex items-center gap-2">
+                                <MapPin className="w-5 h-5" />
+                                {event.location}
+                            </p>
+                        </div>
+                        <p className="text-green-100">
+                            Organised by{' '}
+                            <span className="font-bold text-white">
+                                {event.organizer}
+                            </span>
+                        </p>
+                    </div>
+                </div>
+            </header>
+
+            {/* Main Content Layout */}
+            <main className="max-w-6xl mx-auto px-4 md:px-8 -mt-8">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Left Column (Main Event Info) */}
+                    <div className="lg:col-span-2 space-y-6">
+                        {/* Banner Image Placeholder */}
+                        <div className="w-full aspect-2/1 bg-[#d1f4e0] rounded-2xl flex flex-col items-center justify-center text-[#2b7a56]">
+                            <ImageIcon className="w-10 h-10 mb-2 opacity-50" />
+                            <span className="text-sm font-medium">
+                                Event banner image (uploaded by organiser)
+                            </span>
+                        </div>
+
+                        {/* Description */}
+                        <section className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                                About this event
+                            </h2>
+                            <p className="text-gray-600 leading-relaxed">
+                                {event.description}
+                            </p>
+                        </section>
+
+                        {/* Event Details Row */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="bg-white p-4 rounded-xl border border-gray-200">
+                                <p className="text-xs text-gray-500 font-medium mb-1">
+                                    Doors open
+                                </p>
+                                <p className="font-bold text-gray-900">
+                                    {event.doorsOpen}
+                                </p>
+                            </div>
+                            <div className="bg-white p-4 rounded-xl border border-gray-200">
+                                <p className="text-xs text-gray-500 font-medium mb-1">
+                                    Category
+                                </p>
+                                <p className="font-bold text-gray-900">
+                                    {event.category}
+                                </p>
+                            </div>
+                            <div className="bg-white p-4 rounded-xl border border-gray-200">
+                                <p className="text-xs text-gray-500 font-medium mb-1">
+                                    Entry
+                                </p>
+                                <p className="font-bold text-gray-900">
+                                    {event.entryType}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* How Entry Works Section */}
+                        <section className="bg-[#eaffd0] p-6 rounded-2xl border border-[#d2f0b0]">
+                            <div className="flex flex-col md:flex-row gap-6 items-start">
+                                <div className="flex-1">
+                                    <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
+                                        <ArrowRight className="w-5 h-5 text-gray-700" />
+                                        How entry works
+                                    </h3>
+                                    <p className="text-sm text-gray-700 leading-relaxed">
+                                        When you continue, we hold your tickets
+                                        for 10 minutes while you pay with mobile
+                                        money. Once payment is approved, each
+                                        ticket gets its own QR code in My
+                                        tickets and by email. Show it at the
+                                        gate; each code can only be scanned
+                                        once.
+                                    </p>
+                                </div>
+                                <div className="flex gap-3 shrink-0">
+                                    <div className="bg-[#1a6e44] text-white p-3 rounded-lg w-20 h-24 flex flex-col items-center justify-center text-center shadow-sm">
+                                        <span className="text-2xl font-bold leading-none">
+                                            10
+                                        </span>
+                                        <span className="text-xs font-bold mb-1">
+                                            min
+                                        </span>
+                                        <span className="text-[10px] leading-tight opacity-90">
+                                            Ticket hold while you pay
+                                        </span>
+                                    </div>
+                                    <div className="bg-white text-gray-900 p-3 rounded-lg w-20 h-24 flex flex-col items-center justify-center text-center border border-gray-200 shadow-sm">
+                                        <span className="text-2xl font-bold leading-none">
+                                            1
+                                        </span>
+                                        <span className="text-xs font-bold mb-1">
+                                            scan
+                                        </span>
+                                        <span className="text-[10px] leading-tight text-gray-500">
+                                            Per ticket at the door
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        {/* Venue Section */}
+                        <section className="pt-4">
+                            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                                Venue
+                            </h2>
+                            <div className="flex flex-col md:flex-row gap-6">
+                                <div className="w-full md:w-1/3 aspect-video md:aspect-square bg-[#eefaf4] rounded-xl flex items-center justify-center text-[#2b7a56] border border-[#d1f4e0]">
+                                    <span className="text-xs font-medium">
+                                        [Map placeholder]
+                                    </span>
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-lg text-gray-900 mb-1">
+                                        {event.venueName}
+                                    </h3>
+                                    {event.address.map((line, idx) => (
+                                        <p
+                                            key={idx}
+                                            className="text-gray-600 text-sm"
+                                        >
+                                            {line}
+                                        </p>
+                                    ))}
+                                    <Link
+                                        to="#"
+                                        className="inline-block mt-3 text-sm font-bold text-[#1a6e44] hover:underline"
+                                    >
+                                        Get directions
+                                    </Link>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    {/* Right Column (Ticket Selection) */}
+                    <div className="lg:col-span-1">
+                        <TicketSelector
+                            ticketTypes={event.ticketTypes}
+                            maxTicketsPerOrder={event.maxTicketsPerOrder}
+                        />
+                    </div>
+                </div>
+            </main>
+        </div>
+    )
+}
