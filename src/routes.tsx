@@ -22,11 +22,6 @@ export const router = createBrowserRouter([
                 path: 'events/:id',
                 element: <EventDetails />,
             },
-            {
-                // add more pages here
-                // path: "login",
-                // element: <Login />,
-            },
         ],
     },
     {
