@@ -1,5 +1,7 @@
-import SignUp from "./pages/Signup";
+import CheckoutPage from "./pages/CheckoutPage";
 
-export default function App() {
-  return <SignUp />;
+function App() {
+  return <CheckoutPage />;
 }
+
+export default App;
