@@ -1,4 +1,4 @@
-import type { TicketType } from '@/lib/mock-data'
+import type { TicketType } from '@/src/types/event-ticket.types'
 import { Lock } from 'lucide-react'
 import { useState } from 'react'
 import { CustomButton } from '../Button/custom-button'
@@ -40,7 +40,7 @@ export default function TicketSelector({
     )
 
     return (
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 sticky top-6">
+        <div className="bg-background border border-gray-200 rounded-xl shadow-sm p-6 sticky top-6">
             <h2 className="text-xl font-bold text-gray-900 mb-1">
                 Choose tickets
             </h2>

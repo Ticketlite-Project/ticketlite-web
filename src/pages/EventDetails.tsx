@@ -1,4 +1,3 @@
-// src/pages/EventDetails.tsx
 import { mockEvent } from '@/lib/mock-data'
 import TicketSelector from '@/src/components/TicketSelector/ticket-selector'
 import { ArrowRight, Calendar, Image as ImageIcon, MapPin } from 'lucide-react'
@@ -81,7 +80,7 @@ export default function EventDetails() {
                         </div>
 
                         {/* Description */}
-                        <section className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                        <section className="bg-background p-6 rounded-2xl border border-gray-100 shadow-sm">
                             <h2 className="text-2xl font-bold text-gray-900 mb-4">
                                 About this event
                             </h2>
@@ -92,7 +91,7 @@ export default function EventDetails() {
 
                         {/* Event Details Row */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="bg-white p-4 rounded-xl border border-gray-200">
+                            <div className="bg-background p-4 rounded-xl border border-gray-200">
                                 <p className="text-xs text-gray-500 font-medium mb-1">
                                     Doors open
                                 </p>
@@ -100,7 +99,7 @@ export default function EventDetails() {
                                     {event.doorsOpen}
                                 </p>
                             </div>
-                            <div className="bg-white p-4 rounded-xl border border-gray-200">
+                            <div className="bg-background p-4 rounded-xl border border-gray-200">
                                 <p className="text-xs text-gray-500 font-medium mb-1">
                                     Category
                                 </p>
@@ -108,7 +107,7 @@ export default function EventDetails() {
                                     {event.category}
                                 </p>
                             </div>
-                            <div className="bg-white p-4 rounded-xl border border-gray-200">
+                            <div className="bg-background p-4 rounded-xl border border-gray-200">
                                 <p className="text-xs text-gray-500 font-medium mb-1">
                                     Entry
                                 </p>
@@ -148,7 +147,7 @@ export default function EventDetails() {
                                             Ticket hold while you pay
                                         </span>
                                     </div>
-                                    <div className="bg-white text-gray-900 p-3 rounded-lg w-20 h-24 flex flex-col items-center justify-center text-center border border-gray-200 shadow-sm">
+                                    <div className="bg-background text-gray-900 p-3 rounded-lg w-20 h-24 flex flex-col items-center justify-center text-center border border-gray-200 shadow-sm">
                                         <span className="text-2xl font-bold leading-none">
                                             1
                                         </span>
