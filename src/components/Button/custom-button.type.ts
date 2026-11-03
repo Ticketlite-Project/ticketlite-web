@@ -13,6 +13,7 @@ interface BaseProps {
     rounded?: boolean
     icon?: ReactNode
     iconRight?: ReactNode
+    iconLeft?: ReactNode
     fullWidth?: boolean
     loading?: boolean
     className?: string

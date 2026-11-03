@@ -1,7 +1,7 @@
-import { Loader2 } from 'lucide-react'
-import { Link } from 'react-router'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { Loader2 } from 'lucide-react'
+import { Link } from 'react-router'
 import type { CustomButtonProps } from './custom-button.type'
 import { buttonVariantStyles, sizeStyles } from './custom-button.variants'
 
@@ -25,6 +25,7 @@ export function CustomButton(props: CustomButtonProps) {
     const classes = cn(
         'relative',
         'rounded-none',
+        'cursor-pointer',
         'font-bold',
         'uppercase',
         'tracking-wide',
@@ -32,7 +33,7 @@ export function CustomButton(props: CustomButtonProps) {
         styles.ring,
         sizeStyles[size],
         bordered ? styles.border : 'border-0',
-        rounded && 'rounded-lg',
+        rounded && 'rounded',
         fullWidth && 'w-full',
         loading && 'cursor-wait',
         className
