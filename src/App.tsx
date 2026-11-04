@@ -8,7 +8,7 @@ import {
 import { RouterProvider } from 'react-router-dom'
 import { toast } from 'sonner'
 import './App.css'
-import { router } from './routes'
+import { router } from './router'
 
 const queryClient = new QueryClient({
     // Catches all Query (GET) failures
