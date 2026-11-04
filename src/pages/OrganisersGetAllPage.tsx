@@ -1,5 +1,7 @@
+import { UnderConstruction } from '../components/UnderConstruction/under-construction'
+
 function OrganisersGetAllPage() {
-    return <div>OrganisersGetAllPage</div>
+    return <UnderConstruction />
 }
 
 export default OrganisersGetAllPage
