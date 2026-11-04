@@ -225,7 +225,7 @@ export default function EventDetails() {
                                         </p>
                                     ))}
                                     <Link
-                                        to="#"
+                                        to="/"
                                         className="inline-block mt-3 text-sm font-bold text-[#1a6e44] hover:underline"
                                     >
                                         Get directions

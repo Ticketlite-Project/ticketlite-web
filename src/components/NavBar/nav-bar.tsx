@@ -82,29 +82,30 @@ export function Navbar() {
                     {!isAuthenticated ? (
                         /* --- LOGGED OUT STATE --- */
                         <div className="flex items-center gap-2">
-                            <Link to="/login">
-                                <CustomButton
-                                    variant="secondary"
-                                    className="shadow"
-                                >
-                                    Log in
-                                </CustomButton>
-                            </Link>
-                            <Link to="/signup">
-                                <CustomButton
-                                    variant="primary"
-                                    className="shadow"
-                                >
-                                    Sign up
-                                </CustomButton>
-                            </Link>
+                            <CustomButton
+                                to="/login"
+                                variant="secondary"
+                                className="flex items-center shadow"
+                            >
+                                Log in
+                            </CustomButton>
+                            <CustomButton
+                                to="/signup"
+                                variant="primary"
+                                className="flex items-center shadow"
+                            >
+                                Sign up
+                            </CustomButton>
                         </div>
                     ) : (
                         /* --- LOGGED IN STATE --- */
                         <DropdownMenu>
                             <DropdownMenuTrigger
                                 render={
-                                    <button className="flex items-center gap-3 hover:opacity-80 transition-opacity outline-none">
+                                    <button
+                                        type="button"
+                                        className="flex items-center gap-3 hover:opacity-80 transition-opacity outline-none"
+                                    >
                                         <Avatar className="h-9 w-9 bg-[#d1f4e0] text-[#1a6e44] border border-[#b3e6a1]">
                                             <AvatarFallback className="font-bold text-sm">
                                                 {getInitials(
@@ -113,7 +114,7 @@ export function Navbar() {
                                                 )}
                                             </AvatarFallback>
                                         </Avatar>
-                                        <span className="text-sm font-bold text-gray-900 hidden sm:block">
+                                        <span className="text-sm font-bold text-primary hidden sm:block">
                                             {user?.first_name}{' '}
                                             {user?.last_name?.charAt(0)}.
                                         </span>
