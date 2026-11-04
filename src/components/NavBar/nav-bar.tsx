@@ -101,14 +101,20 @@ export function Navbar() {
 
                     {!isAuthenticated ? (
                         /* --- LOGGED OUT STATE --- */
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-2">
                             <Link to="/login">
-                                <CustomButton variant="secondary">
+                                <CustomButton
+                                    variant="secondary"
+                                    className="shadow"
+                                >
                                     Log in
                                 </CustomButton>
                             </Link>
                             <Link to="/signup">
-                                <CustomButton variant="primary">
+                                <CustomButton
+                                    variant="primary"
+                                    className="shadow"
+                                >
                                     Sign up
                                 </CustomButton>
                             </Link>

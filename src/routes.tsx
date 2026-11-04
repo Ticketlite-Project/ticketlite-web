@@ -1,4 +1,4 @@
-import { MainLayout } from '@/src/layouts/MainLayouts'
+import { MainLayout } from '@/src/layouts/MainLayout'
 import { createBrowserRouter } from 'react-router-dom'
 import CreateEvent from './pages/CreateEvent'
 import EventDetails from './pages/EventDetails'
@@ -19,12 +19,17 @@ export const router = createBrowserRouter([
                 element: <Home />,
             },
             {
+                path: 'events',
+                element: <Home />,
+            },
+            {
                 path: 'events/:id',
                 element: <EventDetails />,
             },
         ],
     },
     {
+        //TODO: move organisers route into a common and shared layout
         path: 'organisers',
         element: <OrganisersGetAllPage />,
         errorElement: <NotFound />,

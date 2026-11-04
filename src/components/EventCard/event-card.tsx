@@ -1,4 +1,5 @@
 import type { EventData } from '@/src/types/event-ticket.types'
+import { cn } from 'cn'
 import { Clock, MapPin } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import TicketCard from '../TicketCard/ticket-card'
@@ -9,7 +10,7 @@ type EventCardProps = {
 
 export default function EventCard({ event }: Readonly<EventCardProps>) {
     // Format date for the little calendar box (e.g., NOV 14)
-    const dateObj = new Date(event.startDate)
+    const dateObj = event.startDate
     // const month = dateObj
     //     .toLocaleString('en-US', { month: 'short' })
     //     .toUpperCase()
@@ -46,15 +47,16 @@ export default function EventCard({ event }: Readonly<EventCardProps>) {
                 <div className="flex items-end justify-between border-t border-gray-100 pt-3">
                     <div>
                         <p className="text-xs text-gray-500">From</p>
-                        {event.isSoldOut ? (
-                            <p className="text-lg font-bold text-gray-400">
-                                CHS {event.priceFrom.toFixed(2)}
-                            </p>
-                        ) : (
-                            <p className="text-lg font-bold text-primary ">
-                                CHS {event.priceFrom.toFixed(2)}
-                            </p>
-                        )}
+                        <p
+                            className={cn(
+                                'text-lg font-bold',
+                                event.isSoldOut
+                                    ? 'text-gray-400'
+                                    : 'text-primary'
+                            )}
+                        >
+                            GHS {event.priceFrom.toFixed(2)}
+                        </p>
                     </div>
 
                     {event.isSoldOut ? (

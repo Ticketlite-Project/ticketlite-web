@@ -181,6 +181,3 @@ export const mockEvents: EventData[] = [
         ],
     },
 ]
-
-// Keep the single event export for the Event Details page
-export const mockEvent = mockEvents[0]

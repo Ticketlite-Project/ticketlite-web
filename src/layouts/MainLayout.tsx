@@ -1,17 +1,17 @@
-// src/layouts/MainLayout.tsx
+import { Toaster } from '@/components/ui/sonner'
 import { Link, Outlet } from 'react-router-dom'
 import { Navbar } from '../components/NavBar/nav-bar'
 
 export function MainLayout() {
     return (
-        <div className="flex flex-col min-h-screen bg-background text-foreground">
+        <div className="flex flex-col min-h-screen bg-background text-foregrounds hide-scrollbar">
             {/* Navbar stays fixed at the top */}
             <Navbar />
 
             {/* Main content area where child pages will render */}
-            <main className="flex-1">
-                <Outlet />
-            </main>
+
+            <Outlet />
+            <Toaster position="top-right" richColors closeButton />
 
             <footer className="flex flex-col sm:flex-row sm:items-center justify-between bg-card border-t px-4 sm:px-6 py-5 gap-4 text-sm text-muted-foreground">
                 {/* Left Side */}

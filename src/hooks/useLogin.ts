@@ -3,6 +3,7 @@ import { useAuth } from '@/src/hooks/useAuth'
 import { type LoginCredentials } from '@/src/types/auth'
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 
 export function useLogin() {
     const { login } = useAuth()
@@ -21,11 +22,15 @@ export function useLogin() {
         onSuccess: ({ tokens, userData }) => {
             // 3. Update global state and redirect
             login(tokens, userData)
+            toast.success('Login successful')
             navigate('/') // Redirect to home or dashboard
         },
         onError: (error: Error) => {
-            // Handle error (e.g., show a toast notification)
-            console.error(error.message)
+            toast.error('Login failed', {
+                description:
+                    error.message ??
+                    'Please check your connection and try again.',
+            })
         },
     })
 }

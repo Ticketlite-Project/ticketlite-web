@@ -39,12 +39,14 @@ export default function TicketSelector({
         0
     )
 
+    const currency = ticketTypes[0]?.currency ?? 'GHS'
+
     return (
-        <div className="bg-background border border-gray-200 rounded-xl shadow-sm p-6 sticky top-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-1">
+        <div className="bg-card border rounded-lg shadow-sm p-4 sticky top-6">
+            <h2 className="text-xl font-bold text-primary mb-1">
                 Choose tickets
             </h2>
-            <p className="text-sm text-gray-500 mb-6">
+            <p className="text-sm text-primary mb-6">
                 Max {maxTicketsPerOrder} tickets per order
             </p>
 
@@ -53,7 +55,9 @@ export default function TicketSelector({
                     const isLowStock =
                         ticket.lowStockThreshold &&
                         ticket.available <= ticket.lowStockThreshold
-                    const canIncrement = totalTickets < maxTicketsPerOrder
+                    const canIncrement =
+                        totalTickets < maxTicketsPerOrder &&
+                        quantities[ticket.id] < ticket.available
 
                     return (
                         <div
@@ -61,7 +65,7 @@ export default function TicketSelector({
                             className="flex justify-between items-start border-b border-gray-100 pb-4 last:border-0 last:pb-0"
                         >
                             <div className="flex-1 pr-4">
-                                <h3 className="font-semibold text-gray-900">
+                                <h3 className="font-semibold text-primary">
                                     {ticket.name}
                                 </h3>
                                 <p className="text-lg font-bold text-[#1a6e44]">
@@ -72,7 +76,7 @@ export default function TicketSelector({
                                         Only {ticket.available} left
                                     </p>
                                 ) : (
-                                    <p className="text-xs text-gray-500 mt-1">
+                                    <p className="text-xs text-primary mt-1">
                                         {ticket.available} available
                                     </p>
                                 )}
@@ -80,6 +84,9 @@ export default function TicketSelector({
 
                             <div className="flex items-center gap-3">
                                 <button
+                                    title="Remove Ticket"
+                                    aria-label="Remove a ticket"
+                                    type="button"
                                     onClick={() => handleDecrement(ticket.id)}
                                     disabled={quantities[ticket.id] === 0}
                                     className="w-8 h-8 flex items-center justify-center rounded border border-gray-300 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -90,6 +97,9 @@ export default function TicketSelector({
                                     {quantities[ticket.id]}
                                 </span>
                                 <button
+                                    title="Add Ticket"
+                                    aria-label="Add one more ticket"
+                                    type="button"
                                     onClick={() => handleIncrement(ticket.id)}
                                     disabled={!canIncrement}
                                     className="w-8 h-8 flex items-center justify-center rounded border border-gray-300 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -108,17 +118,17 @@ export default function TicketSelector({
                         {totalTickets} ticket{totalTickets !== 1 ? 's' : ''}
                     </span>
                     <span className="text-xl font-extrabold text-gray-900">
-                        GHS {totalPrice.toFixed(2)}
+                        {currency} {totalPrice.toFixed(2)}
                     </span>
                 </div>
                 <CustomButton
                     variant="primary"
                     disabled={totalTickets === 0}
-                    className="w-full bg-[#1a6e44] hover:bg-[#145c38] text-white font-bold py-3 px-4 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-[#1a6e44] hover:bg-[#145c38] text-white font-bold py-3 px-4 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     CONTINUE TO CHECKOUT
                 </CustomButton>
-                <p className="text-xs text-center text-gray-500 mt-3 flex items-center justify-center gap-1">
+                <p className="text-xs text-center text-gray-500 pt-3 flex items-center justify-center gap-1">
                     <Lock className="w-3 h-3" />
                     Pay with mobile money. No card needed.
                 </p>

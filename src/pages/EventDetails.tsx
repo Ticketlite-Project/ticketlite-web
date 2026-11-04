@@ -1,4 +1,4 @@
-import { mockEvent } from '@/lib/mock-data'
+import { mockEvents } from '@/lib/mock-data'
 import TicketSelector from '@/src/components/TicketSelector/ticket-selector'
 import { ArrowRight, Calendar, Image as ImageIcon, MapPin } from 'lucide-react'
 import { useEffect } from 'react'
@@ -9,7 +9,7 @@ export default function EventDetails() {
     const navigate = useNavigate()
 
     // Derive the event synchronously - no state or effect needed for static mock data
-    const event = mockEvent.id === id ? mockEvent : null
+    const event = mockEvents.find((event) => event.id === id) ?? null
 
     // Handle 404 navigation in an effect (external system sync)
     useEffect(() => {
@@ -21,9 +21,9 @@ export default function EventDetails() {
     if (!event) return null
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-20 font-sans">
+        <div className="min-h-screen bg-background pb-20 gap-5">
             {/* Header Section */}
-            <header className="bg-[#2b7a56] text-white pt-8 pb-12 px-4 md:px-8">
+            <header className="bg-headerBackground text-white pt-8 pb-12 px-4 md:px-8">
                 <div className="max-w-6xl mx-auto">
                     <div className="text-xs font-medium text-green-100 mb-4 flex gap-2">
                         <Link to="/events" className="hover:underline">
@@ -67,12 +67,12 @@ export default function EventDetails() {
             </header>
 
             {/* Main Content Layout */}
-            <main className="max-w-6xl mx-auto px-4 md:px-8 -mt-8">
+            <section className="max-w-6xl mx-auto px-4 md:px-8 -mt-8 p-8">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Left Column (Main Event Info) */}
-                    <div className="lg:col-span-2 space-y-6">
+                    <div className="lg:col-span-2 gap-4 space-y-6">
                         {/* Banner Image Placeholder */}
-                        <div className="w-full aspect-2/1 bg-[#d1f4e0] rounded-2xl flex flex-col items-center justify-center text-[#2b7a56]">
+                        <div className="w-full aspect-2/1 bg-image-placeholder rounded-2xl flex flex-col items-center justify-center text-[#2b7a56] border-6 border-image-placeholder-border">
                             <ImageIcon className="w-10 h-10 mb-2 opacity-50" />
                             <span className="text-sm font-medium">
                                 Event banner image (uploaded by organiser)
@@ -80,52 +80,46 @@ export default function EventDetails() {
                         </div>
 
                         {/* Description */}
-                        <section className="bg-background p-6 rounded-2xl border border-gray-100 shadow-sm">
-                            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                        <div className="bg-background p-8 border-gray-100">
+                            <h2 className="text-2xl font-bold text-primary mb-4">
                                 About this event
                             </h2>
                             <p className="text-gray-600 leading-relaxed">
                                 {event.description}
                             </p>
-                        </section>
+                        </div>
 
                         {/* Event Details Row */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="bg-background p-4 rounded-xl border border-gray-200">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-1 border rounded-lg mb-5">
+                            <div className="p-4">
                                 <p className="text-xs text-gray-500 font-medium mb-1">
                                     Doors open
                                 </p>
-                                <p className="font-bold text-gray-900">
-                                    {event.doorsOpen}
-                                </p>
+                                <p className="font-bold ">{event.doorsOpen}</p>
                             </div>
-                            <div className="bg-background p-4 rounded-xl border border-gray-200">
+                            <div className="p-4 border-r border-l">
                                 <p className="text-xs text-gray-500 font-medium mb-1">
                                     Category
                                 </p>
-                                <p className="font-bold text-gray-900">
-                                    {event.category}
-                                </p>
+                                <p className="font-bold ">{event.category}</p>
                             </div>
-                            <div className="bg-background p-4 rounded-xl border border-gray-200">
+                            <div className="p-4">
                                 <p className="text-xs text-gray-500 font-medium mb-1">
                                     Entry
                                 </p>
-                                <p className="font-bold text-gray-900">
-                                    {event.entryType}
-                                </p>
+                                <p className="font-bold">{event.entryType}</p>
                             </div>
                         </div>
 
                         {/* How Entry Works Section */}
-                        <section className="bg-[#eaffd0] p-6 rounded-2xl border border-[#d2f0b0]">
+                        <section className="bg-ticket-warning-bg p-6 rounded-2xl">
                             <div className="flex flex-col md:flex-row gap-6 items-start">
                                 <div className="flex-1">
-                                    <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
-                                        <ArrowRight className="w-5 h-5 text-gray-700" />
+                                    <h3 className="font-bold mb-2 flex items-center gap-2">
+                                        <ArrowRight className="w-5 h-5 text-green-700" />
                                         How entry works
                                     </h3>
-                                    <p className="text-sm text-gray-700 leading-relaxed">
+                                    <p className="text-sm text-primary leading-relaxed">
                                         When you continue, we hold your tickets
                                         for 10 minutes while you pay with mobile
                                         money. Once payment is approved, each
@@ -147,7 +141,7 @@ export default function EventDetails() {
                                             Ticket hold while you pay
                                         </span>
                                     </div>
-                                    <div className="bg-background text-gray-900 p-3 rounded-lg w-20 h-24 flex flex-col items-center justify-center text-center border border-gray-200 shadow-sm">
+                                    <div className="bg-background text-primary p-3 rounded-lg w-20 h-24 flex flex-col items-center justify-center text-center border border-gray-200 shadow-sm">
                                         <span className="text-2xl font-bold leading-none">
                                             1
                                         </span>
@@ -164,17 +158,17 @@ export default function EventDetails() {
 
                         {/* Venue Section */}
                         <section className="pt-4">
-                            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                            <h2 className="text-2xl font-bold text-primary mb-4">
                                 Venue
                             </h2>
                             <div className="flex flex-col md:flex-row gap-6">
-                                <div className="w-full md:w-1/3 aspect-video md:aspect-square bg-[#eefaf4] rounded-xl flex items-center justify-center text-[#2b7a56] border border-[#d1f4e0]">
+                                <div className="w-full h-50 md:w-2/3 aspect-video md:aspect-square bg-image-placeholder/80 rounded-xl flex items-center justify-center text-[#2b7a56]">
                                     <span className="text-xs font-medium">
                                         [Map placeholder]
                                     </span>
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-lg text-gray-900 mb-1">
+                                    <h3 className="font-bold text-lg text-primary mb-1">
                                         {event.venueName}
                                     </h3>
                                     {event.address.map((line, idx) => (
@@ -204,7 +198,7 @@ export default function EventDetails() {
                         />
                     </div>
                 </div>
-            </main>
+            </section>
         </div>
     )
 }

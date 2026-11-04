@@ -65,9 +65,9 @@ export default function Home() {
     }, [events, activeCategory, sortBy])
 
     return (
-        <div className="min-h-screen bg-background">
+        <section className="min-h-screen bg-background">
             {/* HERO */}
-            <section className="bg-headerBackground text-white pt-6 pb-3 md:px-8">
+            <div className="bg-headerBackground text-white pt-6 pb-3 md:px-8">
                 <div className="max-w-6xl mx-auto">
                     <p className="text-xs font-bold tracking-widest text-[#D3EFA3] mb-6 uppercase">
                         Concerts · Church Programmes · Campus Nights · Meetups
@@ -94,7 +94,7 @@ export default function Home() {
                         <span>✓ ONE SCAN PER TICKET AT THE GATE</span>
                     </div>
                 </div>
-            </section>
+            </div>
 
             {/* CATEGORY FILTERS — unchanged */}
             <div className="border-b border-gray-200 bg-categround sticky top-0 z-10">
@@ -202,6 +202,6 @@ export default function Home() {
             </section>
 
             <OrganiserCallout />
-        </div>
+        </section>
     )
 }
