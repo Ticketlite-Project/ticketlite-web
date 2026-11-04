@@ -9,13 +9,17 @@ import {
     type ReactNode,
 } from 'react'
 import { toast } from 'sonner'
-import { apiClient } from '../api/axios'
-import { clearAccessToken, setAccessToken } from '../lib/validation/auth-token'
+import { apiClient, setAuthExpiredHandler } from '../api/axios'
+import {
+    clearAccessToken,
+    getAccessToken,
+    setAccessToken,
+} from '../lib/validation/auth-token'
 import { AuthContext } from './AuthContext'
 
 const getInitialUser = async (): Promise<User | null> => {
     try {
-        const { data } = await apiClient.post('/api/auth/refresh')
+        const { data } = await apiClient.post('/api/auth/refresh', {})
 
         setAccessToken(data.access)
 
@@ -79,6 +83,18 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         }
     }, [])
 
+    useEffect(() => {
+        setAuthExpiredHandler(() => {
+            clearAccessToken()
+            setUser(null)
+            queryClient.clear()
+        })
+
+        return () => {
+            setAuthExpiredHandler(() => undefined)
+        }
+    }, [queryClient])
+
     // Preserve the existing login signature.
     const login = useCallback(
         (tokens: AuthTokens, userData: User) => {
@@ -99,16 +115,22 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         queryClient.clear()
 
         // Invalidate the refresh session on the backend.
-        void apiClient.post('/api/auth/logout').catch((error: unknown) => {
-            if (axios.isAxiosError(error)) {
-                toast.error(
-                    'Server logout failed:',
-                    error.response?.data ?? error.message
-                )
-            } else {
-                console.error('Server logout failed:', error)
-            }
-        })
+        void apiClient
+            .post('/api/auth/logout', undefined, {
+                headers: {
+                    Authorization: `Bearer ${getAccessToken()}`,
+                },
+            })
+            .catch((error: unknown) => {
+                if (axios.isAxiosError(error)) {
+                    toast.error(
+                        'Server logout failed:',
+                        error.response?.data ?? error.message
+                    )
+                } else {
+                    console.error('Server logout failed:', error)
+                }
+            })
     }, [queryClient])
 
     const contextValue = useMemo(

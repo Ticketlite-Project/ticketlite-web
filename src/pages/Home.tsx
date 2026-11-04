@@ -104,6 +104,7 @@ export default function Home() {
                             const isActive = activeCategory === cat.id
                             return (
                                 <button
+                                    type="button"
                                     key={cat.id}
                                     onClick={() => setActiveCategory(cat.id)}
                                     className={`cursor-pointer flex flex-col items-center gap-2 min-w-20 transition-colors ${
@@ -183,6 +184,7 @@ export default function Home() {
                     <div className="text-center py-20 text-gray-500">
                         No events match your search.{' '}
                         <button
+                            type="button"
                             className="ml-2 underline text-green-700"
                             onClick={() =>
                                 setSearchParams(new URLSearchParams())
@@ -200,8 +202,9 @@ export default function Home() {
                     </p>
                 )}
             </section>
-
-            <OrganiserCallout />
+            <div className="mb-7">
+                <OrganiserCallout />
+            </div>
         </section>
     )
 }

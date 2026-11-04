@@ -28,7 +28,7 @@ export function DatePicker({
                         type="button"
                         className={cn(
                             'text-sm text-left outline-none w-full',
-                            !date && 'text-gray-900'
+                            !date && 'text-primary'
                         )}
                     >
                         {date ? format(date, 'PPP') : placeholder}

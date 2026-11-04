@@ -21,7 +21,7 @@ export function OrganiserCallout() {
                     <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
                         <CustomButton
                             variant="primary"
-                            to="/organisers/start"
+                            to="/"
                             rounded
                             className="flex px-6 py-6 w-full sm:w-auto items-center"
                         >
@@ -30,7 +30,7 @@ export function OrganiserCallout() {
                         <CustomButton
                             variant="secondary"
                             rounded
-                            to="/organisers/dashboard"
+                            to="/"
                             className="flex px-6 py-6 w-full sm:w-auto border-none shadow-sm items-center"
                         >
                             See the Dashboard

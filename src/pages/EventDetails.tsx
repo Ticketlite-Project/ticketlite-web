@@ -1,5 +1,14 @@
+import {
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbList,
+    BreadcrumbPage,
+    BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb'
 import { mockEvents } from '@/lib/mock-data'
 import TicketSelector from '@/src/components/TicketSelector/ticket-selector'
+import { motion } from 'framer-motion'
 import { ArrowRight, Calendar, Image as ImageIcon, MapPin } from 'lucide-react'
 import { useEffect } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
@@ -23,17 +32,53 @@ export default function EventDetails() {
     return (
         <div className="min-h-screen bg-background pb-20 gap-5">
             {/* Header Section */}
-            <header className="bg-headerBackground text-white pt-8 pb-12 px-4 md:px-8">
-                <div className="max-w-6xl mx-auto">
-                    <div className="text-xs font-medium text-green-100 mb-4 flex gap-2">
-                        <Link to="/events" className="hover:underline">
-                            Events
-                        </Link>
-                        <span>›</span>
-                        <span>{event.category}</span>
-                        <span>›</span>
-                        <span className="text-white">{event.title}</span>
-                    </div>
+            <motion.header className="bg-headerBackground text-white pt-8 pb-12 px-4 md:px-8">
+                <motion.div className="max-w-6xl mx-auto">
+                    <Breadcrumb className="mb-4">
+                        <BreadcrumbList>
+                            <BreadcrumbItem>
+                                <BreadcrumbLink
+                                    className="text-green-200 underline"
+                                    render={<Link to="/" />}
+                                >
+                                    Events
+                                </BreadcrumbLink>
+                            </BreadcrumbItem>
+
+                            <BreadcrumbSeparator className="text-foreground" />
+
+                            {/* <BreadcrumbItem>
+                                <BreadcrumbLink
+                                    className="text-green-200 underline"
+                                    render={<Link to="/events" />}
+                                >
+                                    Events
+                                </BreadcrumbLink>
+                            </BreadcrumbItem> */}
+
+                            {/* <BreadcrumbSeparator className="text-foreground" /> */}
+
+                            <BreadcrumbItem>
+                                <BreadcrumbLink
+                                    render={<Link to="/" />}
+                                    className="text-green-200 underline"
+                                >
+                                    {event.category}
+                                </BreadcrumbLink>
+                            </BreadcrumbItem>
+
+                            <BreadcrumbSeparator className="text-foreground" />
+
+                            <BreadcrumbItem>
+                                <BreadcrumbPage
+                                    className="max-w-[16rem] truncate text-lime-200"
+                                    title={event.title}
+                                >
+                                    {event.title}
+                                </BreadcrumbPage>
+                            </BreadcrumbItem>
+                        </BreadcrumbList>
+                    </Breadcrumb>
 
                     {event.isSellingFast && (
                         <span className="inline-block bg-[#b3e6a1] text-[#1a5c38] text-xs font-bold px-3 py-1 rounded-full mb-4">
@@ -48,11 +93,11 @@ export default function EventDetails() {
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 text-sm md:text-base">
                         <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-8 text-green-50">
                             <p className="flex items-center gap-2">
-                                <Calendar className="w-5 h-5" />
+                                <Calendar className="w-5 h-5 text-lime-300" />
                                 {event.date} · {event.time}
                             </p>
                             <p className="flex items-center gap-2">
-                                <MapPin className="w-5 h-5" />
+                                <MapPin className="w-5 h-5 text-lime-300" />
                                 {event.location}
                             </p>
                         </div>
@@ -63,16 +108,16 @@ export default function EventDetails() {
                             </span>
                         </p>
                     </div>
-                </div>
-            </header>
+                </motion.div>
+            </motion.header>
 
             {/* Main Content Layout */}
             <section className="max-w-6xl mx-auto px-4 md:px-8 -mt-8 p-8">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <motion.div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Left Column (Main Event Info) */}
                     <div className="lg:col-span-2 gap-4 space-y-6">
                         {/* Banner Image Placeholder */}
-                        <div className="w-full aspect-2/1 bg-image-placeholder rounded-2xl flex flex-col items-center justify-center text-[#2b7a56] border-6 border-image-placeholder-border">
+                        <div className="w-full aspect-2/1 bg-image-placeholder rounded-2xl flex flex-col items-center justify-center text-[#2b7a56] border-6 border-image-placeholder-border mt-6">
                             <ImageIcon className="w-10 h-10 mb-2 opacity-50" />
                             <span className="text-sm font-medium">
                                 Event banner image (uploaded by organiser)
@@ -91,19 +136,19 @@ export default function EventDetails() {
 
                         {/* Event Details Row */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-1 border rounded-lg mb-5">
-                            <div className="p-4">
+                            <div className="p-3">
                                 <p className="text-xs text-gray-500 font-medium mb-1">
                                     Doors open
                                 </p>
                                 <p className="font-bold ">{event.doorsOpen}</p>
                             </div>
-                            <div className="p-4 border-r border-l">
+                            <div className="p-3 border-r border-l">
                                 <p className="text-xs text-gray-500 font-medium mb-1">
                                     Category
                                 </p>
                                 <p className="font-bold ">{event.category}</p>
                             </div>
-                            <div className="p-4">
+                            <div className="p-3">
                                 <p className="text-xs text-gray-500 font-medium mb-1">
                                     Entry
                                 </p>
@@ -191,13 +236,13 @@ export default function EventDetails() {
                     </div>
 
                     {/* Right Column (Ticket Selection) */}
-                    <div className="lg:col-span-1">
+                    <div className="lg:col-span-1 mt-6">
                         <TicketSelector
                             ticketTypes={event.ticketTypes}
                             maxTicketsPerOrder={event.maxTicketsPerOrder}
                         />
                     </div>
-                </div>
+                </motion.div>
             </section>
         </div>
     )

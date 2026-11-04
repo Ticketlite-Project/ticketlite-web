@@ -64,10 +64,10 @@ export function EventSearchBar({
     return (
         <div className="flex flex-col md:flex-row max-w-4xl mb-6">
             {/* Search input */}
-            <div className="bg-background flex-1 px-4 py-2 border-b md:border-b-0 md:border-r border-gray-200">
+            <div className="bg-background flex-1 px-4 py-2 border-b md:border-b-0 md:border-r border-primary-200">
                 <label
                     htmlFor="search"
-                    className="text-xs font-bold text-gray-500 block mb-1"
+                    className="text-xs font-bold text-primary block mb-1"
                 >
                     Search events
                 </label>
@@ -78,15 +78,15 @@ export function EventSearchBar({
                     onChange={(e) => setSearch(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="Event name, artist or organiser"
-                    className="w-full text-gray-900 outline-none placeholder:text-gray-400 text-sm"
+                    className="w-full text-primary outline-none placeholder:text-primary text-sm"
                 />
             </div>
 
             {/* City picker */}
-            <div className="bg-background flex-1 px-4 py-2 border-b md:border-b-0 md:border-r border-gray-200">
+            <div className="bg-background flex-1 px-4 py-2 border-b md:border-b-0 md:border-r border-primary-200">
                 <label
                     htmlFor="city"
-                    className="text-xs font-bold text-gray-500 block mb-1"
+                    className="text-xs font-bold text-primary block mb-1"
                 >
                     City
                 </label>
@@ -95,12 +95,12 @@ export function EventSearchBar({
                         render={
                             <button
                                 type="button"
-                                className="flex justify-between items-center w-full cursor-pointer text-gray-900 outline-none placeholder:text-gray-400 text-sm"
+                                className="flex justify-between items-center w-full cursor-pointer text-primary-900 outline-none placeholder:text-primary-400 text-sm"
                             >
-                                <span className="text-gray-900 outline-none placeholder:text-gray-400 text-sm">
+                                <span className="text-primary outline-none placeholder:text-primary text-sm">
                                     {city ?? 'Anywhere in Ghana'}
                                 </span>
-                                <ChevronDown className="w-5 h-5 text-gray-400" />
+                                <ChevronDown className="w-5 h-5 text-primary" />
                             </button>
                         }
                     ></PopoverTrigger>
@@ -159,7 +159,7 @@ export function EventSearchBar({
                 <div className="w-full">
                     <label
                         htmlFor="date"
-                        className="text-xs font-bold text-gray-500 block mb-1"
+                        className="text-xs font-bold text-primary block mb-1"
                     >
                         Date
                     </label>
@@ -168,7 +168,7 @@ export function EventSearchBar({
                         onDateChange={(d) => setDate(d ?? null)}
                     />
                 </div>
-                <ChevronDown className="w-5 h-5 text-gray-400 pointer-events-none" />
+                <ChevronDown className="w-5 h-5 text-primary pointer-events-none" />
             </div>
             {/* Search button */}
             <CustomButton
@@ -176,7 +176,7 @@ export function EventSearchBar({
                 bordered
                 onClick={handleSearch}
                 icon={<Search />}
-                className="md:self-stretch md:h-auto rounded-none px-6 border-gray-400"
+                className="md:self-stretch md:h-auto rounded-none px-6 border-primary-400"
             >
                 Search
             </CustomButton>

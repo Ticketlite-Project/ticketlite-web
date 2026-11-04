@@ -10,8 +10,9 @@ import {
 import { useAuth } from '@/src/hooks/useAuth'
 import { LogOut, Moon, Sun, Ticket, User as UserIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { CustomButton } from '../Button/custom-button'
+import { AppNavLink } from './nav-link'
 
 export function Navbar() {
     const { user, isAuthenticated, logout } = useAuth()
@@ -52,30 +53,9 @@ export function Navbar() {
 
                     {/* Navigation Links */}
                     <nav className="hidden md:flex items-center gap-6">
-                        <NavLink
-                            to="/"
-                            className={({ isActive }) =>
-                                `text-sm font-bold transition-colors text-primary ${isActive ? 'border-b-2 border-[#1a6e44] pb-1' : ''}`
-                            }
-                        >
-                            Events
-                        </NavLink>
-                        <NavLink
-                            to="/my-tickets"
-                            className={({ isActive }) =>
-                                `text-sm font-bold transition-colors text-primary ${isActive ? 'border-b-2 border-[#1a6e44] pb-1' : ''}`
-                            }
-                        >
-                            My tickets
-                        </NavLink>
-                        <NavLink
-                            to="/organisers"
-                            className={({ isActive }) =>
-                                `text-sm font-bold transition-colors text-primary ${isActive ? 'border-b-2 border-[#1a6e44] pb-1' : ''}`
-                            }
-                        >
-                            For organisers
-                        </NavLink>
+                        <AppNavLink to="/">Events</AppNavLink>
+                        <AppNavLink to="/my-tickets">My tickets</AppNavLink>
+                        <AppNavLink to="/organisers">For organisers</AppNavLink>
                     </nav>
                 </div>
 
