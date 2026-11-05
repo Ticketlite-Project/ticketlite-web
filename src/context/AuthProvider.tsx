@@ -12,35 +12,22 @@ import { toast } from 'sonner'
 import { apiClient, setAuthExpiredHandler } from '../api/axios'
 import {
     clearAccessToken,
-    getAccessToken,
     setAccessToken,
 } from '../lib/validation/auth-token'
 import { AuthContext } from './AuthContext'
 
 const getInitialUser = async (): Promise<User | null> => {
     try {
-        const { data } = await apiClient.post('/api/auth/refresh', {})
-
+        const { data } = await apiClient.post('/api/auth/refresh/', {})
         setAccessToken(data.access)
-
         return data.user
     } catch (error: unknown) {
         clearAccessToken()
-
-        if (axios.isAxiosError(error)) {
-            if (error.response?.status === 401) {
-                // No valid refresh session exists.
-                return null
-            }
-
-            console.error(
-                'Unable to restore authentication session:',
-                error.message
-            )
-        } else {
+        if (axios.isAxiosError(error) && error.response?.status !== 401) {
+            console.error('Unable to restore authentication session:', error.message)
+        } else if (!axios.isAxiosError(error)) {
             console.error('Unexpected session restoration error:', error)
         }
-
         return null
     }
 }
@@ -48,36 +35,16 @@ const getInitialUser = async (): Promise<User | null> => {
 export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     const [user, setUser] = useState<User | null>(null)
     const [isInitializing, setIsInitializing] = useState(true)
-
     const queryClient = useQueryClient()
 
-    // Restore the authenticated session on application startup.
     useEffect(() => {
         let isMounted = true
-
-        const initializeAuth = async () => {
-            try {
-                const initialUser = await getInitialUser()
-
-                if (isMounted) {
-                    setUser(initialUser)
-                }
-            } catch (error: unknown) {
-                clearAccessToken()
-
-                if (isMounted) {
-                    setUser(null)
-                }
-                toast.error(`Authentication initialization failed:, ${error}`)
-            } finally {
-                if (isMounted) {
-                    setIsInitializing(false)
-                }
+        void getInitialUser().then((initialUser) => {
+            if (isMounted) {
+                setUser(initialUser)
+                setIsInitializing(false)
             }
-        }
-
-        void initializeAuth()
-
+        })
         return () => {
             isMounted = false
         }
@@ -89,17 +56,12 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
             setUser(null)
             queryClient.clear()
         })
-
-        return () => {
-            setAuthExpiredHandler(() => undefined)
-        }
+        return () => setAuthExpiredHandler(() => undefined)
     }, [queryClient])
 
-    // Preserve the existing login signature.
     const login = useCallback(
         (tokens: AuthTokens, userData: User) => {
             queryClient.clear()
-
             setAccessToken(tokens.access)
             setUser(userData)
         },
@@ -107,30 +69,16 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     )
 
     const logout = useCallback(() => {
-        // Clear local authentication immediately.
         clearAccessToken()
         setUser(null)
-
-        // Remove cached data belonging to the previous user.
         queryClient.clear()
-
-        // Invalidate the refresh session on the backend.
-        void apiClient
-            .post('/api/auth/logout', undefined, {
-                headers: {
-                    Authorization: `Bearer ${getAccessToken()}`,
-                },
+        void apiClient.post('/api/auth/logout/', undefined).catch((error: unknown) => {
+            toast.error('Server logout failed', {
+                description: axios.isAxiosError(error)
+                    ? String(error.response?.data ?? error.message)
+                    : 'Please try again.',
             })
-            .catch((error: unknown) => {
-                if (axios.isAxiosError(error)) {
-                    toast.error(
-                        'Server logout failed:',
-                        error.response?.data ?? error.message
-                    )
-                } else {
-                    console.error('Server logout failed:', error)
-                }
-            })
+        })
     }, [queryClient])
 
     const contextValue = useMemo(

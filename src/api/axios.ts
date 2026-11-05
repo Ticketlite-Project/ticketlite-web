@@ -26,11 +26,9 @@ export const apiClient = axios.create({
 apiClient.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
         const token = getAccessToken()
-
         if (token) {
             config.headers.Authorization = `Bearer ${token}`
         }
-
         return config
     },
     (error) => Promise.reject(error)
@@ -61,7 +59,6 @@ async function refreshAccessToken(): Promise<string> {
                 refreshPromise = null
             })
     }
-
     return refreshPromise
 }
 
@@ -84,17 +81,14 @@ apiClient.interceptors.response.use(
 
         try {
             const accessToken = await refreshAccessToken()
-
             originalRequest.headers = {
                 ...originalRequest.headers,
                 Authorization: `Bearer ${accessToken}`,
             }
-
             return apiClient(originalRequest)
         } catch (refreshError) {
             clearAccessToken()
             authExpiredHandler?.()
-
             return Promise.reject(refreshError)
         }
     }

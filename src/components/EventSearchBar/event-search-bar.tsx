@@ -13,12 +13,13 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover'
-import { CustomButton } from @/src/mock/ghana-citiesstom-button'
 import { DatePicker } from '@/src/components/DatePicker/date-picker'
-import { ghanaCities } from '@/src/mock/lib/ghana-cities'
+
+import { ghanaCities } from '@/src/mock/ghana-cities'
 import { cn } from '@/src/mock/utils'
 import { Check, ChevronDown, Search } from 'lucide-react'
 import { useState } from 'react'
+import { CustomButton } from '../Button/custom-button'
 
 export interface EventSearchParams {
     search: string

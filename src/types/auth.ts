@@ -16,6 +16,21 @@ export type User = {
     email: string
 }
 
+export type RegisterData = {
+    first_name: string
+    last_name: string
+    username: string
+    email: string
+    password: string
+}
+
+export type AuthResponse = {
+    message?: string
+    access?: string
+    refresh?: string
+    user?: User
+}
+
 export type AuthContextType = {
     user: User | null
     isAuthenticated: boolean

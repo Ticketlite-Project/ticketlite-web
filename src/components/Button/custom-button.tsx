@@ -2,6 +2,8 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/src/mock/utils'
 import { Loader2 } from 'lucide-react'
 import { Link } from 'react-router'
+import type { ComponentProps } from 'react'
+import type { LinkProps } from 'react-router'
 import type { CustomButtonProps } from './custom-button.type'
 import { buttonVariantStyles, sizeStyles } from './custom-button.variants'
 
@@ -70,7 +72,7 @@ export function CustomButton(props: CustomButtonProps) {
 
     // Link mode — `to` is present
     if ('to' in rest && rest.to !== undefined) {
-        const { to, ...linkRest } = rest
+        const { to, ...linkRest } = rest as LinkProps
         return (
             <Link
                 to={to}
@@ -84,7 +86,11 @@ export function CustomButton(props: CustomButtonProps) {
     }
 
     // Native button mode
-    const { type = 'button', disabled, ...buttonRest } = rest
+    const {
+        type = 'button',
+        disabled,
+        ...buttonRest
+    } = rest as ComponentProps<'button'>
     return (
         <Button
             type={type}
