@@ -4,6 +4,7 @@ import { Page } from '@/src/components/Page'
 import { MainLayout } from '@/src/layouts/MainLayout'
 import {
     CreateEvent,
+    Checkout,
     EventDetails,
     EventsDashboard,
     Home,
@@ -80,6 +81,14 @@ export const router = createBrowserRouter([
             {
                 element: <ProtectedRoute />,
                 children: [
+                    {
+                        path: 'checkout',
+                        element: (
+                            <Page>
+                                <Checkout />
+                            </Page>
+                        ),
+                    },
                     {
                         path: 'organisers',
                         element: (

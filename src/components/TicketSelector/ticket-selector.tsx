@@ -1,6 +1,8 @@
 import type { TicketType } from '@/src/types/event-ticket.types'
+import { useAuth } from '@/src/hooks/useAuth'
 import { Lock } from 'lucide-react'
 import { useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { CustomButton } from '../Button/custom-button'
 
 type TicketSelectorProps = {
@@ -12,9 +14,27 @@ export default function TicketSelector({
     ticketTypes,
     maxTicketsPerOrder,
 }: Readonly<TicketSelectorProps>) {
+    const navigate = useNavigate()
+    const location = useLocation()
+    const { isAuthenticated, isInitializing } = useAuth()
     const [quantities, setQuantities] = useState<Record<string, number>>(
         ticketTypes.reduce((acc, ticket) => ({ ...acc, [ticket.id]: 0 }), {})
     )
+
+    const handleCheckout = () => {
+        if (isInitializing) return
+
+        if (!isAuthenticated) {
+            navigate('/login', {
+                state: { from: location },
+            })
+            return
+        }
+
+        navigate('/checkout', {
+            state: { quantities, ticketTypes, maxTicketsPerOrder },
+        })
+    }
 
     const handleIncrement = (id: string) => {
         const currentTotal = Object.values(quantities).reduce(
@@ -124,6 +144,7 @@ export default function TicketSelector({
                 <CustomButton
                     variant="primary"
                     disabled={totalTickets === 0}
+                    onClick={handleCheckout}
                     className="w-full bg-[#1a6e44] hover:bg-[#145c38] text-white font-bold py-3 px-4 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     CONTINUE TO CHECKOUT
