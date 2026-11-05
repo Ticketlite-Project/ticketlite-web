@@ -1,5 +1,5 @@
 {
-<<<<<<< HEAD
+
   "name": "ticketlite-web",
   "private": true,
   "version": "0.0.0",
@@ -40,7 +40,7 @@
     "typescript-eslint": "^8.72.0",
     "vite": "^8.3.5"
   }
-=======
+,
     "name": "ticketlite-web",
     "private": true,
     "version": "0.0.0",
@@ -93,5 +93,5 @@
         "typescript-eslint": "^8.72.0",
         "vite": "^8.3.5"
     }
->>>>>>> c6a1c8c6854c3497dd4d31bea9b68d21fe80058a
+
 }
