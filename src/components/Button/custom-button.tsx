@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+import { cn } from '@/src/mock/utils'
 import { Loader2 } from 'lucide-react'
 import { Link } from 'react-router'
 import type { CustomButtonProps } from './custom-button.type'

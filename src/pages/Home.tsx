@@ -1,4 +1,4 @@
-import { mockEvents } from '@/lib/mock-data'
+import { mockEvents } from '@/src/mock/mock-data'
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { CATEGORIES } from '../components/event-categories'

@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils'
+import { cn } from '@/src/mock/utils'
 import { motion, useReducedMotion } from 'framer-motion'
 import { ArrowLeft, Hammer, Mail, Sparkles, Wrench } from 'lucide-react'
 import { CustomButton } from '../Button/custom-button'

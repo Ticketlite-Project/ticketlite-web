@@ -6,8 +6,8 @@ import {
     BreadcrumbPage,
     BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
-import { mockEvents } from '@/lib/mock-data'
 import TicketSelector from '@/src/components/TicketSelector/ticket-selector'
+import { mockEvents } from '@/src/mock/mock-data'
 import { motion } from 'framer-motion'
 import { ArrowRight, Calendar, Image as ImageIcon, MapPin } from 'lucide-react'
 import { useEffect } from 'react'
