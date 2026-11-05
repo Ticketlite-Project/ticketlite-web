@@ -47,7 +47,7 @@ export default function SignUp() {
         const nameParts = values.fullName.trim().split(/\s+/)
         signUpMutation.mutate({
             first_name: nameParts[0],
-            last_name: nameParts.slice(1).join(' ') || nameParts[0],
+            last_name: nameParts.slice(1).join(' '),
             username: values.email.trim().split('@')[0].toLowerCase(),
             email: values.email.trim().toLowerCase(),
             password: values.password,

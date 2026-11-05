@@ -19,9 +19,9 @@ if (!API_BASE_URL) {
 }
 
 export const apiClient = axios.create({
-    baseURL: API_BASE_URL,
-    withCredentials: true,
-    timeout: 15_000,
+    baseURL: import.meta.env.DEV ? '/api' : API_BASE_URL,
+    withCredentials: false,
+    timeout: 60_000,
 })
 
 apiClient.interceptors.request.use(
