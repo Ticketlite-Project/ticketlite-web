@@ -44,7 +44,7 @@ export default function Login() {
                 if (event.target === event.currentTarget) closeModal()
             }}
         >
-            <div className="flex h-[720px] max-h-[calc(100vh-48px)] w-[420px] flex-col overflow-hidden rounded-sm bg-background">
+            <div className="flex h-180 max-h-[calc(100vh-48px)] w-105 flex-col overflow-hidden rounded-sm bg-background">
                 <div className="relative flex shrink-0 items-center justify-center border-b px-6 py-5">
                     <button
                         type="button"
