@@ -13,7 +13,7 @@ export async function loginUser(
 ): Promise<AuthTokens> {
     try {
         const response = await apiClient.post<AuthTokens>(
-            '/api/auth/login/',
+            '/auth/login/',
             credentials
         )
         return response.data
@@ -30,7 +30,7 @@ export async function registerUser(
 ): Promise<AuthResponse> {
     try {
         const response = await apiClient.post<AuthResponse>(
-            '/api/auth/register/',
+            '/auth/register/',
             data
         )
         return response.data
@@ -56,7 +56,7 @@ export async function registerUser(
 
 export async function fetchUserProfile(token: string): Promise<User> {
     try {
-        const response = await apiClient.get<User>('/api/auth/me/', {
+        const response = await apiClient.get<User>('/auth/me/', {
             headers: { Authorization: `Bearer ${token}` },
         })
         return response.data

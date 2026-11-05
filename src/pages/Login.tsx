@@ -22,9 +22,8 @@ export default function Login() {
     const isLoading = isSubmitting || loginMutation.isPending
 
     return (
-        <div className="min-h-screen bg-white lg:flex lg:items-center lg:justify-center">
-            <div className="w-full min-h-screen bg-white lg:fixed lg:inset-0 lg:z-50 lg:flex lg:items-center lg:justify-center lg:bg-black/90 lg:px-4 lg:py-6">
-                <div className="w-full min-h-screen bg-white lg:min-h-0 lg:max-w-[420px] lg:rounded-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 px-4 py-6">
+            <div className="max-h-[95vh] w-[420px] overflow-y-auto bg-white rounded-sm">
                     <div className="flex items-center justify-between border-b px-6 py-5">
                         <Link to="/" className="flex items-center gap-3">
                             <Ticket className="h-7 w-7 fill-[#83c52c] text-[#83c52c]" />
@@ -63,7 +62,6 @@ export default function Login() {
                             <Link to="/signup" className="font-semibold text-green-600 underline underline-offset-4">Create an account</Link>
                         </p>
                     </div>
-                </div>
             </div>
         </div>
     )

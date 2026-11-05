@@ -12,17 +12,25 @@ import { toast } from 'sonner'
 import { apiClient, setAuthExpiredHandler } from '../api/axios'
 import {
     clearAccessToken,
+    getRefreshToken,
     setAccessToken,
+    setRefreshToken,
 } from '../lib/validation/auth-token'
 import { AuthContext } from './AuthContext'
 
 const getInitialUser = async (): Promise<User | null> => {
+    const refresh = getRefreshToken()
+    if (!refresh) {
+        return null
+    }
     try {
-        const { data } = await apiClient.post('/api/auth/refresh/', {})
+        const { data } = await apiClient.post('/auth/token/refresh/', { refresh })
         setAccessToken(data.access)
-        return data.user
+        const profile = await apiClient.get<User>('/auth/me/')
+        return profile.data
     } catch (error: unknown) {
         clearAccessToken()
+        setRefreshToken(null)
         if (axios.isAxiosError(error) && error.response?.status !== 401) {
             console.error('Unable to restore authentication session:', error.message)
         } else if (!axios.isAxiosError(error)) {
@@ -53,6 +61,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     useEffect(() => {
         setAuthExpiredHandler(() => {
             clearAccessToken()
+            setRefreshToken(null)
             setUser(null)
             queryClient.clear()
         })
@@ -63,6 +72,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         (tokens: AuthTokens, userData: User) => {
             queryClient.clear()
             setAccessToken(tokens.access)
+            setRefreshToken(tokens.refresh)
             setUser(userData)
         },
         [queryClient]
@@ -70,9 +80,10 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
 
     const logout = useCallback(() => {
         clearAccessToken()
+        setRefreshToken(null)
         setUser(null)
         queryClient.clear()
-        void apiClient.post('/api/auth/logout/', undefined).catch((error: unknown) => {
+        void apiClient.post('/auth/logout/', undefined).catch((error: unknown) => {
             toast.error('Server logout failed', {
                 description: axios.isAxiosError(error)
                     ? String(error.response?.data ?? error.message)

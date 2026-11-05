@@ -1,6 +1,7 @@
 import {
     clearAccessToken,
     getAccessToken,
+    getRefreshToken,
     setAccessToken,
 } from '@/src/lib/validation/auth-token'
 import axios, {
@@ -46,9 +47,13 @@ export function setAuthExpiredHandler(handler: () => void) {
 }
 
 async function refreshAccessToken(): Promise<string> {
+    const refresh = getRefreshToken()
+    if (!refresh) {
+        throw new Error('No refresh session is available')
+    }
     if (!refreshPromise) {
         refreshPromise = apiClient
-            .post<{ access: string }>('/api/auth/refresh/', undefined, {
+            .post<{ access: string }>('/auth/token/refresh/', { refresh }, {
                 _skipAuthRefresh: true,
             } as RetryableRequest)
             .then(({ data }) => {
@@ -71,8 +76,8 @@ apiClient.interceptors.response.use(
             !originalRequest ||
             error.response?.status !== 401 ||
             originalRequest._retry ||
-            originalRequest.url?.includes('/api/auth/login') ||
-            originalRequest.url?.includes('/api/auth/refresh')
+            originalRequest.url?.includes('/auth/login') ||
+            originalRequest.url?.includes('/auth/token/refresh')
         ) {
             return Promise.reject(error)
         }

@@ -41,9 +41,8 @@ export default function SignUp() {
     const isLoading = isSubmitting || signUpMutation.isPending
 
     return (
-        <div className="min-h-screen bg-white lg:flex lg:items-center lg:justify-center">
-            <div className="min-h-screen w-full bg-white lg:fixed lg:inset-0 lg:z-50 lg:flex lg:items-center lg:justify-center lg:bg-black/90 lg:px-4 lg:py-6">
-                <div className="relative min-h-screen w-full bg-white lg:min-h-0 lg:max-h-[95vh] lg:max-w-[420px] lg:overflow-y-auto lg:rounded-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 px-4 py-6">
+            <div className="relative max-h-[95vh] w-[420px] overflow-y-auto bg-white rounded-sm">
                     <div className="flex items-center justify-between border-b border-gray-200 px-6 py-5">
                         <Link to="/" className="flex items-center gap-3">
                             <Ticket className="h-7 w-7 fill-[#83c52c] text-[#83c52c]" />
@@ -112,6 +111,5 @@ export default function SignUp() {
                     </div>
                 </div>
             </div>
-        </div>
     )
 }
