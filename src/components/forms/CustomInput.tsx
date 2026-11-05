@@ -1,29 +1,19 @@
-import { forwardRef, useId, useState } from 'react'
-import type { InputHTMLAttributes } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
+import type { InputHTMLAttributes } from 'react'
+import { forwardRef, useId, useState } from 'react'
 import { cn } from '../../lib/utils'
 
-interface CustomInputProps
-    extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
+interface CustomInputProps extends Omit<
+    InputHTMLAttributes<HTMLInputElement>,
+    'size'
+> {
     label: string
     error?: string
     prefix?: string
 }
 
 const CustomInput = forwardRef<HTMLInputElement, CustomInputProps>(
-    (
-        {
-            label,
-            error,
-            type,
-            id,
-            name,
-            className,
-            prefix,
-            ...props
-        },
-        ref
-    ) => {
+    ({ label, error, type, id, name, className, prefix, ...props }, ref) => {
         const generatedId = useId()
         const inputId = id ?? name ?? generatedId
         const errorId = `${inputId}-error`
@@ -32,17 +22,17 @@ const CustomInput = forwardRef<HTMLInputElement, CustomInputProps>(
         const isPassword = type === 'password'
 
         return (
-            <div className='w-full'>
+            <div className="w-full">
                 <label
                     htmlFor={inputId}
-                    className='mb-2 block text-sm font-semibold text-gray-700'
+                    className="mb-2 block text-sm font-semibold text-foreground"
                 >
                     {label}
                 </label>
 
-                <div className='relative'>
+                <div className="relative">
                     {prefix && (
-                        <span className='absolute inset-y-0 left-0 flex items-center border-r border-slate-200 px-3 text-xs text-slate-800'>
+                        <span className="absolute inset-y-0 left-0 flex items-center border-r border-slate-200 px-3 text-xs text-slate-800">
                             {prefix}
                         </span>
                     )}
@@ -56,9 +46,9 @@ const CustomInput = forwardRef<HTMLInputElement, CustomInputProps>(
                         aria-invalid={!!error}
                         aria-describedby={error ? errorId : undefined}
                         className={cn(
-                            'w-full rounded-lg border bg-white px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100',
+                            'w-full rounded-lg border bg-background px-4 py-3 text-sm text-foreground outline-none transition placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100',
                             error ? 'border-red-500' : 'border-gray-300',
-                            prefix && 'pl-[4.5rem]',
+                            prefix && 'pl-18',
                             isPassword && 'pr-12',
                             className
                         )}
@@ -66,11 +56,11 @@ const CustomInput = forwardRef<HTMLInputElement, CustomInputProps>(
 
                     {isPassword && (
                         <button
-                            type='button'
+                            type="button"
                             onClick={() =>
                                 setShowPassword((previous) => !previous)
                             }
-                            className='absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition hover:text-gray-700'
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition hover:text-gray-700"
                             aria-label={
                                 showPassword ? 'Hide password' : 'Show password'
                             }
@@ -87,8 +77,8 @@ const CustomInput = forwardRef<HTMLInputElement, CustomInputProps>(
                 {error && (
                     <p
                         id={errorId}
-                        className='mt-1 text-xs text-red-500'
-                        role='alert'
+                        className="mt-1 text-xs text-red-500"
+                        role="alert"
                     >
                         {error}
                     </p>
