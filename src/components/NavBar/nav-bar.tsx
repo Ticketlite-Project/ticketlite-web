@@ -10,12 +10,14 @@ import {
 import { useAuth } from '@/src/hooks/useAuth'
 import { LogOut, Moon, Sun, Ticket, User as UserIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { CustomButton } from '../Button/custom-button'
 import { AppNavLink } from './nav-link'
 
 export function Navbar() {
     const { user, isAuthenticated, logout } = useAuth()
+    const location = useLocation()
+    const returnState = { from: location }
 
     const [isDark, setIsDark] = useState(
         () =>
@@ -84,6 +86,7 @@ export function Navbar() {
                         <div className="flex items-center gap-2">
                             <CustomButton
                                 to="/login"
+                                state={returnState}
                                 variant="secondary"
                                 className="flex items-center shadow"
                             >
@@ -91,6 +94,7 @@ export function Navbar() {
                             </CustomButton>
                             <CustomButton
                                 to="/signup"
+                                state={returnState}
                                 variant="primary"
                                 className="flex items-center shadow"
                             >

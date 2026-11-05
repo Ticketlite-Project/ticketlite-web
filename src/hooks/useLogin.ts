@@ -5,7 +5,7 @@ import { useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-export function useLogin() {
+export function useLogin(returnTo = '/') {
     const { login } = useAuth()
     const navigate = useNavigate()
 
@@ -23,7 +23,7 @@ export function useLogin() {
             // 3. Update global state and redirect
             login(tokens, userData)
             toast.success('Login successful')
-            navigate('/') // Redirect to home or dashboard
+            navigate(returnTo, { replace: true })
         },
         onError: (error: Error) => {
             toast.error('Login failed', {

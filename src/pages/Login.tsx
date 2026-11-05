@@ -4,11 +4,26 @@ import { loginSchema, type LoginFormValues } from '@/src/lib/validation/auth'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Ticket, Users, X } from 'lucide-react'
 import { useForm } from 'react-hook-form'
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { CustomButton } from '../components/Button/custom-button'
+import { getOnboardingCloseDestination } from '../lib/onboarding-return'
 
 export default function Login() {
-    const loginMutation = useLogin()
+    const navigate = useNavigate()
+    const location = useLocation()
+    const onboardingState = location.state as
+        | { from?: { pathname?: string; search?: string; hash?: string } }
+        | null
+        | undefined
+    const from = onboardingState?.from
+    const returnTo = from?.pathname
+        ? `${from.pathname}${from.search ?? ''}${from.hash ?? ''}`
+        : '/'
+    const loginMutation = useLogin(returnTo)
+    const closeModal = () => {
+        navigate(getOnboardingCloseDestination(from), { replace: true })
+    }
+    const returnState = from ? { from } : undefined
     const {
         register,
         handleSubmit,
@@ -23,28 +38,39 @@ export default function Login() {
     const isLoading = isSubmitting || loginMutation.isPending
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 px-4 py-6">
-            <div className="max-h-[95vh] w-105 overflow-y-auto bg-background rounded-sm">
-                <div className="flex items-center justify-between border-b px-6 py-5">
-                    <Link to="/" className="flex items-center gap-3">
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 px-4 py-6"
+            onMouseDown={(event) => {
+                if (event.target === event.currentTarget) closeModal()
+            }}
+        >
+            <div className="flex h-[720px] max-h-[calc(100vh-48px)] w-[420px] flex-col overflow-hidden rounded-sm bg-background">
+                <div className="relative flex shrink-0 items-center justify-center border-b px-6 py-5">
+                    <button
+                        type="button"
+                        onClick={closeModal}
+                        className="flex items-center gap-3"
+                    >
                         <Ticket className="h-7 w-7 fill-[#83c52c] text-[#83c52c]" />
                         <span className="text-xl font-bold text-[#00865a]">
                             TicketLite
                         </span>
-                    </Link>
+                    </button>
                     <button
                         type="button"
-                        onClick={() => window.history.back()}
+                        onClick={closeModal}
                         aria-label="Close login"
+                        className="absolute right-6"
                     >
                         <X size={23} />
                     </button>
                 </div>
 
-                <div className="px-5 pb-8 pt-6">
+                <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-8 pt-6">
                     <div className="mb-6 grid grid-cols-2 border-b">
                         <Link
                             to="/signup"
+                            state={returnState}
                             className="py-3 text-center font-semibold text-gray-500"
                         >
                             Sign up
@@ -110,6 +136,7 @@ export default function Login() {
                         New to TicketLite?{' '}
                         <Link
                             to="/signup"
+                            state={returnState}
                             className="font-semibold text-green-600 underline underline-offset-4"
                         >
                             Create an account
