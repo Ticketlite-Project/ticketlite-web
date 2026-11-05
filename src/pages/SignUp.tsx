@@ -1,7 +1,7 @@
 
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { Eye, EyeOff, X, Ticket, Info, Users } from "lucide-react";
+import { Eye, EyeOff, X, Ticket, Info } from "lucide-react";
 import { registerUser } from "../services/authService";
 
 
