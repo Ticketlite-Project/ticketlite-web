@@ -1,25 +1,15 @@
 
 import { Link } from "react-router-dom";
-//import { Ticket } from "lucide-react";
 
 import { IntroCard } from "../../../components/layout";
-import CustomInput from "../../../components/forms/CustomInput";
+import {CustomInput} from "../../../components/forms";
+
 
 export default function LoginForm() {
   return (
     <main className="flex min-h-screen w-full items-center justify-center bg-slate-50 px-4 py-12">
       <div className="w-full max-w-md">
 
-        {/* Ticketlite Branding */}
-        {/* <div className="mb-8 flex items-center justify-center gap-2">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white shadow-md shadow-blue-200">
-            <Ticket size={24} />
-          </div>
-
-          <span className="text-2xl font-extrabold tracking-tight text-slate-900">
-            Ticket<span className="text-blue-600">lite</span>
-          </span>
-        </div> */}
 
         {/* Login Card */}
         <IntroCard
