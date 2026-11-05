@@ -64,7 +64,7 @@ export default function SignUp() {
             }}
         >
             <div className="relative flex h-180 max-h-[calc(100vh-48px)] w-105 flex-col overflow-hidden rounded-sm bg-background">
-                <div className="relative flex shrink-0 items-center justify-center border-b border-gray-200 px-6 py-5">
+                <div className="relative flex shrink-0 items-center justify-content-between border-b border-gray-200 px-6 py-5">
                     <button
                         type="button"
                         onClick={closeModal}
@@ -202,7 +202,7 @@ export default function SignUp() {
                             variant="primary"
                             type="submit"
                             disabled={isLoading}
-                            className="w-full  px-4 py-4 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+                            className="w-full  px-4 py-7 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             {isLoading
                                 ? 'CREATING ACCOUNT...'

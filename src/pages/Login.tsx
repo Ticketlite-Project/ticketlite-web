@@ -45,7 +45,7 @@ export default function Login() {
             }}
         >
             <div className="flex h-180 max-h-[calc(100vh-48px)] w-105 flex-col overflow-hidden rounded-sm bg-background">
-                <div className="relative flex shrink-0 items-center justify-center border-b px-6 py-5">
+                <div className="relative flex shrink-0 items-center justify-content-between border-b px-6 py-5">
                     <button
                         type="button"
                         onClick={closeModal}
@@ -116,7 +116,7 @@ export default function Login() {
                             variant="primary"
                             type="submit"
                             disabled={isLoading}
-                            className="w-full px-4 py-4  disabled:cursor-not-allowed disabled:opacity-60"
+                            className="w-full px-4 py-7 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             {isLoading ? 'LOGGING IN...' : 'LOG IN'}
                         </CustomButton>
