@@ -1,13 +1,18 @@
-import './App.css'
+
+
+import {  Routes, Route } from "react-router-dom";
+import SignUp from "./pages/SignUp";
+import Login from "./pages/Login";
 
 function App() {
-    return (
-        <section className="flex min-h-screen flex-col items-center justify-center gap-4">
-            <div>
-                <h1 className="font-bold text-2xl">TicketLite</h1>
-            </div>
-        </section>
-    )
+  return (
+      <Routes>
+        <Route path="/Signup" element={<SignUp />} />
+        <Route path="/Login" element={<Login />} />
+      </Routes>
+  );
+
+
 }
 
-export default App
+export default App;
