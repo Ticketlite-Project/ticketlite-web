@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router'
+import { useLocation, useNavigate } from 'react-router'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { ArrowLeft, Timer } from 'lucide-react'
@@ -36,6 +36,8 @@ type CheckoutFormValues = z.input<typeof checkoutSchema>
 
 export default function CheckoutPage() {
     const navigate = useNavigate()
+    const location = useLocation()
+    const loginState = { from: location }
 
     const [secondsLeft, setSecondsLeft] = useState(10 * 60)
 
@@ -106,7 +108,7 @@ export default function CheckoutPage() {
         if (!confirmed) return
 
         // TODO: Connect reservation cancellation to the reservation API.
-        navigate('/login', { replace: true })
+        navigate('/login', { replace: true, state: loginState })
     }
 
     return (
@@ -119,7 +121,7 @@ export default function CheckoutPage() {
                         className='flex items-center gap-3 text-slate-900'
                         aria-label='Go back'
                         onClick={() =>
-                            navigate('/login', { replace: true })
+                            navigate('/login', { replace: true, state: loginState })
                         }
                     >
                         <ArrowLeft size={20} />

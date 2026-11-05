@@ -1,5 +1,5 @@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { cn } from '@/lib/utils'
+import { cn } from '@/src/mock/utils'
 import type { CustomAlertProps } from './custom-alert.types'
 import { alertVariantStyles } from './custom-alert.variants'
 
@@ -92,40 +92,39 @@ export function CustomAlert({
     )
 }
 
-    // <CustomAlert
-    //             type="primary"
-    //             icon={<CheckCircle2 />}
-    //             title="Success"
-    //             largeIcon
-    //             description="Your changes have been saved."
-    //         />
+// <CustomAlert
+//             type="primary"
+//             icon={<CheckCircle2 />}
+//             title="Success"
+//             largeIcon
+//             description="Your changes have been saved."
+//         />
 
-    //         <CustomAlert
-    //             type="primary"
-    //             icon={<CheckCircle2 />}
-    //             title="Payment confirmed"
-    //             description="Your order #1234 has been processed."
-    //             boldTitle
-    //             largeIcon
-    //             bordered={false}
-    //         />
+//         <CustomAlert
+//             type="primary"
+//             icon={<CheckCircle2 />}
+//             title="Payment confirmed"
+//             description="Your order #1234 has been processed."
+//             boldTitle
+//             largeIcon
+//             bordered={false}
+//         />
 
-    //         <CustomAlert type="secondary" title="Heads up" />
+//         <CustomAlert type="secondary" title="Heads up" />
 
-    //         <CustomAlert
-    //             type="danger"
-    //             icon={<AlertTriangle />}
-    //             className="border border-black"
-    //             description="Something went wrong. Please try again."
-    //         />
+//         <CustomAlert
+//             type="danger"
+//             icon={<AlertTriangle />}
+//             className="border border-black"
+//             description="Something went wrong. Please try again."
+//         />
 
-    //         <CustomAlert
-    //             type="danger"
-    //             icon={<AlertTriangle />}
-    //             title="Email or Password is wrong"
-    //             description="Check both and try again. After 5 tries, logging in pauses for 10 minutes."
-    //             bordered={true}
-    //             largeIcon
-    //             boldTitle
-    //         />
-
+//         <CustomAlert
+//             type="danger"
+//             icon={<AlertTriangle />}
+//             title="Email or Password is wrong"
+//             description="Check both and try again. After 5 tries, logging in pauses for 10 minutes."
+//             bordered={true}
+//             largeIcon
+//             boldTitle
+//         />

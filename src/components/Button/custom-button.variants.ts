@@ -9,22 +9,22 @@ export const buttonVariantStyles: Record<
     }
 > = {
     primary: {
-        base: 'bg-green-700 text-white hover:bg-green-700 active:bg-green-800',
+        base: 'bg-[#008355] text-white hover:bg-green-700 active:bg-green-800',
         border: 'border border-green-700',
         ring: 'focus-visible:ring-green-500',
     },
     secondary: {
-        base: 'bg-gray-200 text-green-700 hover:bg-gray-300 active:bg-gray-400 dark:bg-gray-800 dark:text-green-400 dark:hover:bg-gray-700',
+        base: 'bg-gray-100 text-[#008355] hover:bg-gray-200 active:bg-gray-300 dark:bg-gray-800 dark:text-green-400 dark:hover:bg-gray-700',
         border: 'border border-gray-300 dark:border-gray-700',
         ring: 'focus-visible:ring-green-500',
     },
     danger: {
-        base: 'bg-white text-red-600 hover:bg-red-50 active:bg-red-100 dark:bg-background dark:hover:bg-red-950/40',
+        base: 'bg-background text-red-600 hover:bg-red-50 active:bg-red-100 dark:bg-background dark:hover:bg-red-950/40',
         border: 'border border-red-500',
         ring: 'focus-visible:ring-red-500',
     },
     valid: {
-        base: 'bg-white text-green-600 hover:bg-green-50 active:bg-green-100 dark:bg-background dark:hover:bg-green-950/40',
+        base: 'bg-background text-green-[#008355] hover:bg-green-50 active:bg-green-100 dark:bg-background dark:hover:bg-green-950/40',
         border: 'border border-green-500',
         ring: 'focus-visible:ring-green-500',
     },
