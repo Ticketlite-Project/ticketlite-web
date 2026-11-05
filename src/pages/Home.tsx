@@ -38,9 +38,40 @@ export default function Home() {
     // const totalCount = data?.total ?? events.length
 
     const sortedEvents = useMemo(() => {
-        const filtered = events.filter(
-            (e) => activeCategory === 'all' || e.type === activeCategory
-        )
+        const searchTerm = query.search.trim().toLowerCase()
+        const filtered = events.filter((event) => {
+            const matchesCategory =
+                activeCategory === 'all' || event.type === activeCategory
+
+            const searchableText = [
+                event.title,
+                event.category,
+                event.organizer,
+                event.location,
+                event.venueName,
+                event.description,
+                ...event.address,
+            ]
+                .join(' ')
+                .toLowerCase()
+            const matchesSearch =
+                !searchTerm || searchableText.includes(searchTerm)
+
+            const matchesCity =
+                !query.city ||
+                [event.location, event.venueName, ...event.address]
+                    .join(' ')
+                    .toLowerCase()
+                    .includes(query.city.toLowerCase())
+
+            const matchesDate =
+                !query.date ||
+                event.startDate.toDateString() === query.date.toDateString()
+
+            return (
+                matchesCategory && matchesSearch && matchesCity && matchesDate
+            )
+        })
 
         return [...filtered].sort((a, b) => {
             switch (sortBy) {
@@ -62,28 +93,29 @@ export default function Home() {
                     return 0
             }
         })
-    }, [events, activeCategory, sortBy])
+    }, [events, activeCategory, sortBy, query])
 
     return (
         <section className="min-h-screen bg-background">
             {/* HERO */}
-            <div className="bg-headerBackground text-white pt-6 pb-3 md:px-8">
+            <div className="bg-headerBackground text-white px-2 pt-6 pb-3 md:px-8">
                 <div className="max-w-6xl mx-auto">
                     <p className="text-xs font-bold tracking-widest text-[#D3EFA3] mb-6 uppercase">
                         Concerts · Church Programmes · Campus Nights · Meetups
                     </p>
-                    <h1 className="text-9xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-6 max-w-3xl">
+                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight mb-6 max-w-3xl">
                         Find your next event. Pay with mobile money.{' '}
                         <span className="text-[#9BE700]">
                             Walk in with one scan.
                         </span>
                     </h1>
-                    <p className="text-green-50 text-lg max-w-2xl mb-10">
+                    <p className="text-green-50 text-base sm:text-lg max-w-2xl mb-10">
                         Every ticket gets its own QR code, so there are no paper
                         tickets to lose and no duplicates at the gate.
                     </p>
 
                     <EventSearchBar
+                        key={`${query.search}-${query.city ?? ''}-${query.date?.toISOString() ?? ''}`}
                         onSearch={handleSearch}
                         initialValues={query}
                     />

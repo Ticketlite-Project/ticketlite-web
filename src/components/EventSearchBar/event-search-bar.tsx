@@ -76,7 +76,15 @@ export function EventSearchBar({
                     type="text"
                     id="search"
                     value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    onChange={(e) => {
+                        const nextSearch = e.target.value
+                        setSearch(nextSearch)
+                        onSearch?.({
+                            search: nextSearch,
+                            city,
+                            date,
+                        })
+                    }}
                     onKeyDown={handleKeyDown}
                     placeholder="Event name, artist or organiser"
                     className="w-full text-primary outline-none placeholder:text-primary text-sm"
@@ -116,6 +124,11 @@ export function EventSearchBar({
                                         onSelect={() => {
                                             setCity(null)
                                             setCityOpen(false)
+                                            onSearch?.({
+                                                search,
+                                                city: null,
+                                                date,
+                                            })
                                         }}
                                     >
                                         <Check
@@ -135,6 +148,11 @@ export function EventSearchBar({
                                             onSelect={() => {
                                                 setCity(c)
                                                 setCityOpen(false)
+                                                onSearch?.({
+                                                    search,
+                                                    city: c,
+                                                    date,
+                                                })
                                             }}
                                         >
                                             <Check
@@ -166,7 +184,10 @@ export function EventSearchBar({
                     </label>
                     <DatePicker
                         date={date ?? undefined}
-                        onDateChange={(d) => setDate(d ?? null)}
+                        onDateChange={(d) => {
+                            setDate(d ?? null)
+                            onSearch?.({ search, city, date: d ?? null })
+                        }}
                     />
                 </div>
                 <ChevronDown className="w-5 h-5 text-primary pointer-events-none" />

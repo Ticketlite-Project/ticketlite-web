@@ -3,7 +3,7 @@ import { useSignUp } from '@/src/hooks/useSignUp'
 import { signUpSchema, type SignUpFormValues } from '@/src/lib/validation/auth'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Info, Ticket, X } from 'lucide-react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { CustomButton } from '../components/Button/custom-button'
 import { getOnboardingCloseDestination } from '../lib/onboarding-return'
@@ -25,7 +25,7 @@ export default function SignUp() {
         register,
         handleSubmit,
         setValue,
-        watch,
+        control,
         formState: { errors, isSubmitting },
     } = useForm<SignUpFormValues>({
         resolver: zodResolver(signUpSchema),
@@ -38,7 +38,10 @@ export default function SignUp() {
         mode: 'onBlur',
     })
 
-    const accountType = watch('accountType')
+    const accountType = useWatch({
+        control,
+        name: 'accountType',
+    })
 
     const onSubmit = (values: SignUpFormValues) => {
         const nameParts = values.fullName.trim().split(/\s+/)
@@ -60,7 +63,7 @@ export default function SignUp() {
                 if (event.target === event.currentTarget) closeModal()
             }}
         >
-            <div className="relative flex h-[720px] max-h-[calc(100vh-48px)] w-[420px] flex-col overflow-hidden rounded-sm bg-background">
+            <div className="relative flex h-180 max-h-[calc(100vh-48px)] w-105 flex-col overflow-hidden rounded-sm bg-background">
                 <div className="relative flex shrink-0 items-center justify-center border-b border-gray-200 px-6 py-5">
                     <button
                         type="button"

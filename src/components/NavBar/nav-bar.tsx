@@ -8,7 +8,15 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useAuth } from '@/src/hooks/useAuth'
-import { LogOut, Moon, Sun, Ticket, User as UserIcon } from 'lucide-react'
+import {
+    LogOut,
+    Menu,
+    Moon,
+    Sun,
+    Ticket,
+    User as UserIcon,
+    X,
+} from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { CustomButton } from '../Button/custom-button'
@@ -18,6 +26,7 @@ export function Navbar() {
     const { user, isAuthenticated, logout } = useAuth()
     const location = useLocation()
     const returnState = { from: location }
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
     const [isDark, setIsDark] = useState(
         () =>
@@ -72,7 +81,7 @@ export function Navbar() {
                                 : 'Switch to dark theme'
                         }
                         onClick={() => setIsDark((current) => !current)}
-                        className=" cursor-pointer border rounded-full text-muted-foreground hover:text-foreground p-2 transition-colors hidden sm:block"
+                        className="cursor-pointer border rounded-full text-muted-foreground hover:text-foreground p-2 transition-colors"
                     >
                         {isDark ? (
                             <Sun className="h-5 w-5" />
@@ -83,7 +92,7 @@ export function Navbar() {
 
                     {!isAuthenticated ? (
                         /* --- LOGGED OUT STATE --- */
-                        <div className="flex items-center gap-2">
+                        <div className="hidden md:flex items-center gap-2">
                             <CustomButton
                                 to="/login"
                                 state={returnState}
@@ -108,7 +117,7 @@ export function Navbar() {
                                 render={
                                     <button
                                         type="button"
-                                        className="flex items-center gap-3 hover:opacity-80 transition-opacity outline-none"
+                                        className="hidden md:flex items-center gap-3 hover:opacity-80 transition-opacity outline-none"
                                     >
                                         <Avatar className="h-9 w-9 bg-[#d1f4e0] text-[#1a6e44] border border-[#b3e6a1]">
                                             <AvatarFallback className="font-bold text-sm">
@@ -177,8 +186,87 @@ export function Navbar() {
                             </DropdownMenuContent>
                         </DropdownMenu>
                     )}
+                    <button
+                        type="button"
+                        aria-label={
+                            mobileMenuOpen
+                                ? 'Close navigation menu'
+                                : 'Open navigation menu'
+                        }
+                        aria-expanded={mobileMenuOpen}
+                        onClick={() => setMobileMenuOpen((open) => !open)}
+                        className="flex items-center justify-center rounded-md border p-2 md:hidden"
+                    >
+                        {mobileMenuOpen ? (
+                            <X className="h-5 w-5" />
+                        ) : (
+                            <Menu className="h-5 w-5" />
+                        )}
+                    </button>
                 </div>
             </div>
+            {mobileMenuOpen && (
+                <div className="absolute left-0 right-0 top-full border-b bg-background px-4 py-5 shadow-lg md:hidden">
+                    <nav className="flex flex-col gap-4">
+                        <AppNavLink
+                            to="/"
+                            className="py-2"
+                            onClick={() => setMobileMenuOpen(false)}
+                        >
+                            Events
+                        </AppNavLink>
+                        <AppNavLink
+                            to="/my-tickets"
+                            className="py-2"
+                            onClick={() => setMobileMenuOpen(false)}
+                        >
+                            My tickets
+                        </AppNavLink>
+                        <AppNavLink
+                            to="/organisers"
+                            className="py-2"
+                            onClick={() => setMobileMenuOpen(false)}
+                        >
+                            For organisers
+                        </AppNavLink>
+                    </nav>
+                    <div className="mt-5 flex gap-2 border-t pt-4">
+                        {!isAuthenticated ? (
+                            <>
+                                <CustomButton
+                                    to="/login"
+                                    state={returnState}
+                                    variant="secondary"
+                                    className="flex items-center flex-1 justify-center"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                >
+                                    Log in
+                                </CustomButton>
+                                <CustomButton
+                                    to="/signup"
+                                    state={returnState}
+                                    variant="primary"
+                                    className="flex items-center flex-1 justify-center"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                >
+                                    Sign up
+                                </CustomButton>
+                            </>
+                        ) : (
+                            <CustomButton
+                                variant="danger"
+                                className="w-full justify-center"
+                                onClick={() => {
+                                    setMobileMenuOpen(false)
+                                    logout()
+                                }}
+                            >
+                                Log out
+                            </CustomButton>
+                        )}
+                    </div>
+                </div>
+            )}
         </header>
     )
 }
