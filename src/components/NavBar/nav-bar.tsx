@@ -20,6 +20,7 @@ export function Navbar() {
     const navigate = useNavigate()
     const returnState = { from: location }
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+    const [profileMenuOpen, setProfileMenuOpen] = useState(false)
 
     const [isDark, setIsDark] = useState(
         () =>
@@ -105,9 +106,10 @@ export function Navbar() {
                         </div>
                     ) : (
                         /* --- LOGGED IN STATE --- */
-                        <DropdownMenu>
+                        <DropdownMenu open={profileMenuOpen} onOpenChange={setProfileMenuOpen}>
                             <DropdownMenuTrigger
                                 type="button"
+                                aria-label="Open profile menu"
                                 className="hidden md:flex items-center gap-3 hover:opacity-80 transition-opacity outline-none"
                             >
                                 <Avatar className="h-9 w-9 bg-[#d1f4e0] text-[#1a6e44] border border-[#b3e6a1]">
@@ -139,7 +141,10 @@ export function Navbar() {
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
-                                    onClick={() => navigate('/my-tickets')}
+                                    onClick={() => {
+                                        setProfileMenuOpen(false)
+                                        navigate('/my-tickets')
+                                    }}
                                     className="cursor-pointer"
                                 >
                                     <Ticket className="mr-2 h-4 w-4" />
@@ -160,6 +165,7 @@ export function Navbar() {
                                 <DropdownMenuItem
                                     onClick={() => {
                                         logout()
+                                        setProfileMenuOpen(false)
                                         navigate('/', { replace: true })
                                     }}
                                     className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
