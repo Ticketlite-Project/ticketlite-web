@@ -3,7 +3,7 @@ import {
     getAccessToken,
     getRefreshToken,
     setAccessToken,
-} from '@/src/lib/validation/auth-token'
+} from '../lib/validation/auth-token'
 import axios, {
     type AxiosError,
     type AxiosRequestConfig,

@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback } from '../../../components/ui/avatar'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -6,8 +6,8 @@ import {
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { useAuth } from '@/src/hooks/useAuth'
+} from '../../../components/ui/dropdown-menu'
+import { useAuth } from '../../hooks/useAuth'
 import {
     LogOut,
     Menu,

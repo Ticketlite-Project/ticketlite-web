@@ -1,4 +1,4 @@
-import { AuthProvider } from '@/src/context/AuthProvider'
+import { AuthProvider } from './context/AuthProvider'
 import {
     MutationCache,
     QueryCache,
@@ -9,6 +9,7 @@ import { RouterProvider } from 'react-router-dom'
 import { toast } from 'sonner'
 import './App.css'
 import { router } from './router'
+import "./index.css";
 
 const queryClient = new QueryClient({
     // Catches all Query (GET) failures

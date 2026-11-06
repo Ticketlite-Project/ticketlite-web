@@ -1,4 +1,4 @@
-import { Toaster } from '@/components/ui/sonner'
+import { Toaster } from '../../components/ui/sonner'
 import { Outlet } from 'react-router-dom'
 import Footer from '../components/Footer/footer'
 import { Navbar } from '../components/NavBar/nav-bar'

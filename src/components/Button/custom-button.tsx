@@ -1,5 +1,5 @@
-import { Button } from '@/components/ui/button'
-import { cn } from '@/src/mock/utils'
+import { Button } from '../../../components/ui/button'
+import { cn } from '../../mock/utils'
 import { Loader2 } from 'lucide-react'
 import { Link } from 'react-router'
 import type { ComponentProps } from 'react'

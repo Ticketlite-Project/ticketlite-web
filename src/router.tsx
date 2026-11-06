@@ -1,7 +1,7 @@
-import { ProtectedRoute } from '@/src/components/auth/ProtectedRoute'
-import { PublicOnlyRoute } from '@/src/components/auth/PublicOnlyRoute'
-import { Page } from '@/src/components/Page'
-import { MainLayout } from '@/src/layouts/MainLayout'
+import { ProtectedRoute } from './components/auth/ProtectedRoute'
+import { PublicOnlyRoute } from './components/auth/PublicOnlyRoute'
+import { Page } from './components/Page'
+import { MainLayout } from './layouts/MainLayout'
 import {
     CreateEvent,
     Checkout,
@@ -13,7 +13,7 @@ import {
     NotFound,
     OrganisersGetAllPage,
     Signup,
-} from '@/src/routes/lazyPages'
+} from './routes/lazyPages'
 import { createBrowserRouter } from 'react-router-dom'
 
 export const router = createBrowserRouter([

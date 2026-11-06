@@ -7,16 +7,16 @@ import {
     CommandInput,
     CommandItem,
     CommandList,
-} from '@/components/ui/command'
+} from '../../../components/ui/command'
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
-} from '@/components/ui/popover'
-import { DatePicker } from '@/src/components/DatePicker/date-picker'
+} from '../../../components/ui/popover'
+import { DatePicker } from '../../components/DatePicker/date-picker'
 
-import { ghanaCities } from '@/src/mock/ghana-cities'
-import { cn } from '@/src/mock/utils'
+import { ghanaCities } from '../../mock/ghana-cities'
+import { cn } from '../../mock/utils'
 import { Check, ChevronDown, Search } from 'lucide-react'
 import { useState } from 'react'
 import { CustomButton } from '../Button/custom-button'

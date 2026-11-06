@@ -1,5 +1,5 @@
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '../../components/ui/card';
+import { Input } from '../../components/ui/input';
 import { motion, type Variants } from 'framer-motion';
 import { ArrowLeft, Ghost, Home, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';

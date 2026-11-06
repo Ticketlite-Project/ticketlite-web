@@ -1,12 +1,12 @@
 'use client'
-import { Button } from '@/components/ui/button'
-import { Calendar } from '@/components/ui/calendar'
+import { Button } from '../../../components/ui/button'
+import { Calendar } from '../../../components/ui/calendar'
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
-} from '@/components/ui/popover'
-import { cn } from '@/src/mock/utils'
+} from '../../../components/ui/popover'
+import { cn } from '../../mock/utils'
 import { format } from 'date-fns'
 
 interface DatePickerProps {

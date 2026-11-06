@@ -1,4 +1,4 @@
-import { cn } from '@/src/mock/utils'
+import { cn } from '../../mock/utils'
 import { NavLink, type NavLinkProps } from 'react-router-dom'
 
 const baseClass = 'text-sm font-bold transition-colors text-primary'
