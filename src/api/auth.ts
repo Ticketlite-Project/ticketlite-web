@@ -14,7 +14,11 @@ export async function loginUser(
     try {
         const response = await apiClient.post<AuthTokens>(
             '/auth/login/',
-            credentials
+            new URLSearchParams({
+                username: credentials.username,
+                password: credentials.password,
+            }),
+            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
         )
         return response.data
     } catch (error) {
@@ -31,18 +35,39 @@ export async function registerUser(
     try {
         const response = await apiClient.post<AuthResponse>(
             '/auth/register/',
-            data
+            new URLSearchParams({
+                first_name: data.first_name,
+                last_name: data.last_name,
+                username: data.username,
+                email: data.email,
+                password: data.password,
+            }),
+            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
         )
         return response.data
     } catch (error) {
         if (isAxiosError(error)) {
             const responseData = error.response?.data as
-                | { message?: string; detail?: string; error?: string }
+                | {
+                      message?: string
+                      detail?: string
+                      error?: string
+                      [field: string]: string | string[] | undefined
+                  }
                 | undefined
+            const fieldErrors = responseData
+                ? Object.entries(responseData)
+                      .filter(([key]) => !['message', 'detail', 'error'].includes(key))
+                      .flatMap(([, value]) =>
+                          Array.isArray(value) ? value : [value]
+                      )
+                      .filter((value): value is string => typeof value === 'string')
+                : []
             const message =
                 responseData?.message ??
                 responseData?.detail ??
-                responseData?.error
+                responseData?.error ??
+                fieldErrors.join(' ')
 
             if (message) {
                 throw new Error(message, { cause: error })
