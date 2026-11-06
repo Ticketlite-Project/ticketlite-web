@@ -8,23 +8,16 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useAuth } from '@/src/hooks/useAuth'
-import {
-    LogOut,
-    Menu,
-    Moon,
-    Sun,
-    Ticket,
-    User as UserIcon,
-    X,
-} from 'lucide-react'
+import { LogOut, Menu, Moon, Sun, Ticket, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { CustomButton } from '../Button/custom-button'
 import { AppNavLink } from './nav-link'
 
 export function Navbar() {
     const { user, isAuthenticated, logout } = useAuth()
     const location = useLocation()
+    const navigate = useNavigate()
     const returnState = { from: location }
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
@@ -150,17 +143,13 @@ export function Navbar() {
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
-                                    render={
-                                        <Link
-                                            to="/my-tickets"
-                                            className="cursor-pointer"
-                                        >
-                                            <Ticket className="mr-2 h-4 w-4" />
-                                            <span>My Tickets</span>
-                                        </Link>
-                                    }
-                                ></DropdownMenuItem>
-                                <DropdownMenuItem
+                                    onClick={() => navigate('/my-tickets')}
+                                    className="cursor-pointer"
+                                >
+                                    <Ticket className="mr-2 h-4 w-4" />
+                                    <span>My Tickets</span>
+                                </DropdownMenuItem>
+                                {/* <DropdownMenuItem
                                     render={
                                         <Link
                                             to="/profile"
@@ -170,19 +159,18 @@ export function Navbar() {
                                             <span>Profile Settings</span>
                                         </Link>
                                     }
-                                ></DropdownMenuItem>
+                                ></DropdownMenuItem> */}
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
-                                    render={
-                                        <button
-                                            onClick={logout}
-                                            className="w-full text-left cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
-                                        >
-                                            <LogOut className="mr-2 h-4 w-4" />
-                                            <span>Log out</span>
-                                        </button>
-                                    }
-                                ></DropdownMenuItem>
+                                    onClick={() => {
+                                        logout()
+                                        navigate('/', { replace: true })
+                                    }}
+                                    className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
+                                >
+                                    <LogOut className="mr-2 h-4 w-4" />
+                                    <span>Log out</span>
+                                </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
                     )}
@@ -259,6 +247,7 @@ export function Navbar() {
                                 onClick={() => {
                                     setMobileMenuOpen(false)
                                     logout()
+                                    navigate('/', { replace: true })
                                 }}
                             >
                                 Log out
