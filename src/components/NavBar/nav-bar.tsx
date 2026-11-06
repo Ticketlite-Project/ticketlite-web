@@ -107,26 +107,22 @@ export function Navbar() {
                         /* --- LOGGED IN STATE --- */
                         <DropdownMenu>
                             <DropdownMenuTrigger
-                                render={
-                                    <button
-                                        type="button"
-                                        className="hidden md:flex items-center gap-3 hover:opacity-80 transition-opacity outline-none"
-                                    >
-                                        <Avatar className="h-9 w-9 bg-[#d1f4e0] text-[#1a6e44] border border-[#b3e6a1]">
-                                            <AvatarFallback className="font-bold text-sm">
-                                                {getInitials(
-                                                    user?.first_name,
-                                                    user?.last_name
-                                                )}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        <span className="text-sm font-bold text-primary hidden sm:block">
-                                            {user?.first_name}{' '}
-                                            {user?.last_name?.charAt(0)}.
-                                        </span>
-                                    </button>
-                                }
-                            />
+                                type="button"
+                                className="hidden md:flex items-center gap-3 hover:opacity-80 transition-opacity outline-none"
+                            >
+                                <Avatar className="h-9 w-9 bg-[#d1f4e0] text-[#1a6e44] border border-[#b3e6a1]">
+                                    <AvatarFallback className="font-bold text-sm">
+                                        {getInitials(
+                                            user?.first_name,
+                                            user?.last_name
+                                        )}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <span className="text-sm font-bold text-primary hidden sm:block">
+                                    {user?.first_name}{' '}
+                                    {user?.last_name?.charAt(0)}.
+                                </span>
+                            </DropdownMenuTrigger>
                             <DropdownMenuContent
                                 align="end"
                                 className="w-56 mt-2"
