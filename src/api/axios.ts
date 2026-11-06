@@ -10,16 +10,10 @@ import axios, {
     type InternalAxiosRequestConfig,
 } from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL
-
-if (!API_BASE_URL) {
-    throw new Error(
-        'VITE_API_URL is not configured. Copy .env.example to .env and restart Vite.'
-    )
-}
-
 export const apiClient = axios.create({
-    baseURL: import.meta.env.DEV ? '/api' : API_BASE_URL,
+    // Use the same origin in both development and production. Vite and Vercel
+    // proxy /api to the backend, avoiding CORS for browser requests.
+    baseURL: '/api',
     withCredentials: false,
     timeout: 60_000,
 })
