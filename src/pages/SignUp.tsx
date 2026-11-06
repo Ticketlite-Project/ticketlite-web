@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Info, Ticket, X } from 'lucide-react'
 import { useForm, useWatch } from 'react-hook-form'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { CustomAlert } from '../components/Alert/custom-alert'
 import { CustomButton } from '../components/Button/custom-button'
 import { getOnboardingCloseDestination } from '../lib/onboarding-return'
 
@@ -185,7 +186,7 @@ export default function SignUp() {
                         </div>
 
                         {accountType === 'organizer' && (
-                            <div className="flex items-start gap-2 rounded-lg bg-lime-200 p-3 text-sm text-gray-900">
+                            <CustomAlert className="flex items-start gap-2 rounded-lg bg-lime-200 p-3 text-sm text-gray-900">
                                 <Info
                                     size={16}
                                     className="mt-0.5 shrink-0 text-emerald-700"
@@ -195,7 +196,7 @@ export default function SignUp() {
                                     You can create draft events right away and
                                     publish once approved.
                                 </p>
-                            </div>
+                            </CustomAlert>
                         )}
 
                         <CustomButton

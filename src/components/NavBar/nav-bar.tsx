@@ -6,6 +6,7 @@ import {
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
+<<<<<<< HEAD
 } from '../../../components/ui/dropdown-menu'
 import { useAuth } from '../../hooks/useAuth'
 import {
@@ -17,16 +18,23 @@ import {
     User as UserIcon,
     X,
 } from 'lucide-react'
+=======
+} from '@/components/ui/dropdown-menu'
+import { useAuth } from '@/src/hooks/useAuth'
+import { LogOut, Menu, Moon, Sun, Ticket, X } from 'lucide-react'
+>>>>>>> 084d11512b77304f09bac94e5f80110eedcf5121
 import { useEffect, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { CustomButton } from '../Button/custom-button'
 import { AppNavLink } from './nav-link'
 
 export function Navbar() {
     const { user, isAuthenticated, logout } = useAuth()
     const location = useLocation()
+    const navigate = useNavigate()
     const returnState = { from: location }
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+    const [profileMenuOpen, setProfileMenuOpen] = useState(false)
 
     const [isDark, setIsDark] = useState(
         () =>
@@ -112,28 +120,25 @@ export function Navbar() {
                         </div>
                     ) : (
                         /* --- LOGGED IN STATE --- */
-                        <DropdownMenu>
+                        <DropdownMenu open={profileMenuOpen} onOpenChange={setProfileMenuOpen}>
                             <DropdownMenuTrigger
-                                render={
-                                    <button
-                                        type="button"
-                                        className="hidden md:flex items-center gap-3 hover:opacity-80 transition-opacity outline-none"
-                                    >
-                                        <Avatar className="h-9 w-9 bg-[#d1f4e0] text-[#1a6e44] border border-[#b3e6a1]">
-                                            <AvatarFallback className="font-bold text-sm">
-                                                {getInitials(
-                                                    user?.first_name,
-                                                    user?.last_name
-                                                )}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        <span className="text-sm font-bold text-primary hidden sm:block">
-                                            {user?.first_name}{' '}
-                                            {user?.last_name?.charAt(0)}.
-                                        </span>
-                                    </button>
-                                }
-                            />
+                                type="button"
+                                aria-label="Open profile menu"
+                                className="hidden md:flex items-center gap-3 hover:opacity-80 transition-opacity outline-none"
+                            >
+                                <Avatar className="h-9 w-9 bg-[#d1f4e0] text-[#1a6e44] border border-[#b3e6a1]">
+                                    <AvatarFallback className="font-bold text-sm">
+                                        {getInitials(
+                                            user?.first_name,
+                                            user?.last_name
+                                        )}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <span className="text-sm font-bold text-primary hidden sm:block">
+                                    {user?.first_name}{' '}
+                                    {user?.last_name?.charAt(0)}.
+                                </span>
+                            </DropdownMenuTrigger>
                             <DropdownMenuContent
                                 align="end"
                                 className="w-56 mt-2"
@@ -150,17 +155,16 @@ export function Navbar() {
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
-                                    render={
-                                        <Link
-                                            to="/my-tickets"
-                                            className="cursor-pointer"
-                                        >
-                                            <Ticket className="mr-2 h-4 w-4" />
-                                            <span>My Tickets</span>
-                                        </Link>
-                                    }
-                                ></DropdownMenuItem>
-                                <DropdownMenuItem
+                                    onClick={() => {
+                                        setProfileMenuOpen(false)
+                                        navigate('/my-tickets')
+                                    }}
+                                    className="cursor-pointer"
+                                >
+                                    <Ticket className="mr-2 h-4 w-4" />
+                                    <span>My Tickets</span>
+                                </DropdownMenuItem>
+                                {/* <DropdownMenuItem
                                     render={
                                         <Link
                                             to="/profile"
@@ -170,19 +174,19 @@ export function Navbar() {
                                             <span>Profile Settings</span>
                                         </Link>
                                     }
-                                ></DropdownMenuItem>
+                                ></DropdownMenuItem> */}
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
-                                    render={
-                                        <button
-                                            onClick={logout}
-                                            className="w-full text-left cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
-                                        >
-                                            <LogOut className="mr-2 h-4 w-4" />
-                                            <span>Log out</span>
-                                        </button>
-                                    }
-                                ></DropdownMenuItem>
+                                    onClick={() => {
+                                        logout()
+                                        setProfileMenuOpen(false)
+                                        navigate('/', { replace: true })
+                                    }}
+                                    className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
+                                >
+                                    <LogOut className="mr-2 h-4 w-4" />
+                                    <span>Log out</span>
+                                </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
                     )}
@@ -259,6 +263,7 @@ export function Navbar() {
                                 onClick={() => {
                                     setMobileMenuOpen(false)
                                     logout()
+                                    navigate('/', { replace: true })
                                 }}
                             >
                                 Log out
