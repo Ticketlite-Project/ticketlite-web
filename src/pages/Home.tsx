@@ -129,7 +129,7 @@ export default function Home() {
             </div>
 
             {/* CATEGORY FILTERS — unchanged */}
-            <div className="border-b border-gray-200 bg-categround sticky top-0 z-10">
+            <div className="border-b border-gray-200 bg-categround sticky top-5 z-10">
                 <div className="max-w-6xl mx-auto px-4 md:px-8">
                     <div className="flex overflow-x-auto hide-scrollbar gap-8 py-4">
                         {CATEGORIES.map((cat) => {
