@@ -86,12 +86,7 @@ export default function MyTickets() {
         )
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const previousTicket = () => {
-        setSelectedTicket((previous) =>
-            previous > 0 ? previous - 1 : displayedTickets.length - 1
-        )
-    }
+    
 
     const downloadTicket = () => {
         window.print()

@@ -44,24 +44,28 @@ export default function MobileMoneyPaymentFlow() {
         payment?.secondsLeft ?? 600
     )
 
-    // Countdown timer
-    useEffect(() => {
-        if (status !== 'waiting') return
+    
+// Countdown timer
+useEffect(() => {
+    if (status !== 'waiting') return
 
-        if (secondsLeft <= 0) {
-            setSecondsLeft(0)
-            setStatus('expired')
-            return
-        }
-
+    if (secondsLeft <= 0) {
         const timer = window.setTimeout(() => {
-            setSecondsLeft((previous) =>
-                Math.max(previous - 1, 0)
-            )
-        }, 1000)
+            setStatus('expired')
+        }, 0)
 
         return () => window.clearTimeout(timer)
-    }, [secondsLeft, status])
+    }
+
+    const timer = window.setTimeout(() => {
+        setSecondsLeft((previous) =>
+            Math.max(previous - 1, 0)
+        )
+    }, 1000)
+
+    return () => window.clearTimeout(timer)
+}, [secondsLeft, status])
+
 
     // Protect payment route from direct access without checkout data
     if (!payment) {
