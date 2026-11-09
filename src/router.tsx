@@ -1,7 +1,9 @@
+
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { PublicOnlyRoute } from './components/auth/PublicOnlyRoute'
 import { Page } from './components/Page'
 import { MainLayout } from './layouts/MainLayout'
+
 import {
     CreateEvent,
     Checkout,
@@ -13,18 +15,23 @@ import {
     NotFound,
     OrganisersGetAllPage,
     Signup,
+    MobileMoneyPaymentFlow,
 } from './routes/lazyPages'
+
 import { createBrowserRouter } from 'react-router-dom'
 
 export const router = createBrowserRouter([
     {
         element: <MainLayout />,
+
         errorElement: (
             <Page>
                 <NotFound />
             </Page>
         ),
+
         children: [
+            // Home page
             {
                 index: true,
                 element: (
@@ -33,6 +40,8 @@ export const router = createBrowserRouter([
                     </Page>
                 ),
             },
+
+            // My tickets
             {
                 path: 'my-tickets',
                 element: (
@@ -41,6 +50,8 @@ export const router = createBrowserRouter([
                     </Page>
                 ),
             },
+
+            // Events
             {
                 path: 'events',
                 element: (
@@ -49,6 +60,8 @@ export const router = createBrowserRouter([
                     </Page>
                 ),
             },
+
+            // Event details
             {
                 path: 'events/:id',
                 element: (
@@ -57,6 +70,8 @@ export const router = createBrowserRouter([
                     </Page>
                 ),
             },
+
+            // Public routes
             {
                 element: <PublicOnlyRoute />,
                 children: [
@@ -78,9 +93,12 @@ export const router = createBrowserRouter([
                     },
                 ],
             },
+
+            // Protected routes
             {
                 element: <ProtectedRoute />,
                 children: [
+                    // Checkout
                     {
                         path: 'checkout',
                         element: (
@@ -89,6 +107,18 @@ export const router = createBrowserRouter([
                             </Page>
                         ),
                     },
+
+                    // Mobile Money Payment
+                    {
+                        path: 'payment/mobile-money',
+                        element: (
+                            <Page>
+                                <MobileMoneyPaymentFlow />
+                            </Page>
+                        ),
+                    },
+
+                    // Organisers
                     {
                         path: 'organisers',
                         element: (
@@ -97,6 +127,8 @@ export const router = createBrowserRouter([
                             </Page>
                         ),
                     },
+
+                    // Create event
                     {
                         path: 'organisers/create-event',
                         element: (
@@ -105,6 +137,8 @@ export const router = createBrowserRouter([
                             </Page>
                         ),
                     },
+
+                    // Organiser dashboard
                     {
                         path: 'organisers/:id',
                         element: (
@@ -115,6 +149,8 @@ export const router = createBrowserRouter([
                     },
                 ],
             },
+
+            // Catch-all route
             {
                 path: '*',
                 element: (

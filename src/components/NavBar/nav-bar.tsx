@@ -6,7 +6,6 @@ import {
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-<<<<<<< HEAD
 } from '../../../components/ui/dropdown-menu'
 import { useAuth } from '../../hooks/useAuth'
 import {
@@ -15,14 +14,8 @@ import {
     Moon,
     Sun,
     Ticket,
-    User as UserIcon,
     X,
 } from 'lucide-react'
-=======
-} from '@/components/ui/dropdown-menu'
-import { useAuth } from '@/src/hooks/useAuth'
-import { LogOut, Menu, Moon, Sun, Ticket, X } from 'lucide-react'
->>>>>>> 084d11512b77304f09bac94e5f80110eedcf5121
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { CustomButton } from '../Button/custom-button'

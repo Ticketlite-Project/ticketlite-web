@@ -1,3 +1,4 @@
+
 import { AuthProvider } from './context/AuthProvider'
 import {
     MutationCache,
@@ -11,7 +12,6 @@ import './App.css'
 import { router } from './router'
 
 const queryClient = new QueryClient({
-    // Catches all Query (GET) failures
     queryCache: new QueryCache({
         onError: (error) => {
             toast.error('Connection Error', {
@@ -20,7 +20,7 @@ const queryClient = new QueryClient({
             })
         },
     }),
-    // Catches all Mutation (POST/PUT/DELETE) failures
+
     mutationCache: new MutationCache({
         onError: (error) => {
             toast.error('Action Failed', {
@@ -29,6 +29,7 @@ const queryClient = new QueryClient({
             })
         },
     }),
+
     defaultOptions: {
         queries: {
             retry: 1,
@@ -51,4 +52,4 @@ function App() {
     )
 }
 
-export default App;
+export default App
