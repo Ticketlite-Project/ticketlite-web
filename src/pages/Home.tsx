@@ -142,7 +142,7 @@ export default function Home() {
                                     className={`cursor-pointer flex flex-col items-center gap-2 min-w-20 transition-colors ${
                                         isActive
                                             ? 'text-green-900'
-                                            : 'text-gray-500 hover:text-gray-900'
+                                            : 'text-gray-500 hover:text-green-800'
                                     }`}
                                 >
                                     <div

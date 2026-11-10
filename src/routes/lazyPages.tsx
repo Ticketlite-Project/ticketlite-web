@@ -1,7 +1,8 @@
-
 import { lazy } from 'react'
 
 export const Home = lazy(() => import('../pages/Home'))
+
+export const AdminDashboard = lazy(() => import('../pages/AdminDashboard'))
 
 export const EventDetails = lazy(() => import('../pages/EventDetails'))
 
@@ -11,13 +12,13 @@ export const OrganisersGetAllPage = lazy(
     () => import('../pages/OrganisersGetAllPage')
 )
 
-export const EventsDashboard = lazy(
-    () => import('../pages/EventsDashboard')
-)
+export const EventsDashboard = lazy(() => import('../pages/EventsDashboard'))
 
 export const CreateEvent = lazy(() => import('../pages/CreateEvent'))
 
 export const Login = lazy(() => import('../pages/Login'))
+
+export const Logout = lazy(() => import('../pages/Logout'))
 
 export const Signup = lazy(() => import('../pages/SignUp'))
 
