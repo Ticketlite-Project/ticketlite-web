@@ -1,17 +1,32 @@
+
 import { Toaster } from '../../components/ui/sonner'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import Footer from '../components/Footer/footer'
 import { Navbar } from '../components/NavBar/nav-bar'
 
 export function MainLayout() {
+    const location = useLocation()
+
+    // Hide the main Navbar on the My Tickets page.
+    const hideNavbar =
+        location.pathname === '/my-tickets' ||
+        location.pathname.startsWith('/my-tickets/')
+
     return (
         <>
-            <div className="flex flex-col min-h-screen bg-background text-foregrounds hide-scrollbar">
-                <Navbar />
-                {/* Main content area where child pages will render */}
+            <div className="flex flex-col min-h-screen bg-background text-foreground hide-scrollbar">
+                {!hideNavbar && <Navbar />}
+
+                {/* Main content area */}
                 <Outlet />
-                <Toaster position="top-right" richColors closeButton />
+
+                <Toaster
+                    position="top-right"
+                    richColors
+                    closeButton
+                />
             </div>
+
             <Footer />
         </>
     )

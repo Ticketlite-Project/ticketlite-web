@@ -237,10 +237,17 @@ export default function EventDetails() {
 
                     {/* Right Column (Ticket Selection) */}
                     <div className="lg:col-span-1 mt-6">
-                        <TicketSelector
-                            ticketTypes={event.ticketTypes}
-                            maxTicketsPerOrder={event.maxTicketsPerOrder}
-                        />
+                       <TicketSelector
+    event={{
+        id: event.id,
+        title: event.title,
+        date: event.date,
+        time: event.time,
+        venue: event.venueName,
+    }}
+    ticketTypes={event.ticketTypes}
+    maxTicketsPerOrder={event.maxTicketsPerOrder}
+/>
                     </div>
                 </motion.div>
             </section>

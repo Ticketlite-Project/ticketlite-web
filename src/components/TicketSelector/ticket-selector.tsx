@@ -1,3 +1,4 @@
+
 import type { TicketType } from '@/src/types/event-ticket.types'
 import { useAuth } from '@/src/hooks/useAuth'
 import { Lock } from 'lucide-react'
@@ -6,23 +7,60 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { CustomButton } from '../Button/custom-button'
 
 type TicketSelectorProps = {
+    event: {
+        id: string
+        title: string
+        date: string
+        time: string
+        venue: string
+    }
     ticketTypes: TicketType[]
     maxTicketsPerOrder: number
 }
 
 export default function TicketSelector({
+    event,
     ticketTypes,
     maxTicketsPerOrder,
 }: Readonly<TicketSelectorProps>) {
     const navigate = useNavigate()
     const location = useLocation()
     const { isAuthenticated, isInitializing } = useAuth()
+
     const [quantities, setQuantities] = useState<Record<string, number>>(
-        ticketTypes.reduce((acc, ticket) => ({ ...acc, [ticket.id]: 0 }), {})
+        ticketTypes.reduce(
+            (acc, ticket) => ({ ...acc, [ticket.id]: 0 }),
+            {}
+        )
     )
 
+    const totalTickets = Object.values(quantities).reduce(
+        (a, b) => a + b,
+        0
+    )
+
+    const selectedTickets = ticketTypes
+        .filter((ticket) => quantities[ticket.id] > 0)
+        .map((ticket) => ({
+            id: ticket.id,
+            name: ticket.name,
+            price: ticket.price,
+            currency: ticket.currency,
+            quantity: quantities[ticket.id],
+            subtotal: ticket.price * quantities[ticket.id],
+        }))
+
+    const totalPrice = selectedTickets.reduce(
+        (total, ticket) => total + ticket.subtotal,
+        0
+    )
+
+    const serviceFee = 0
+    const total = totalPrice + serviceFee
+    const currency = ticketTypes[0]?.currency ?? 'GHS'
+
     const handleCheckout = () => {
-        if (isInitializing) return
+        if (isInitializing || totalTickets === 0) return
 
         if (!isAuthenticated) {
             navigate('/login', {
@@ -32,7 +70,15 @@ export default function TicketSelector({
         }
 
         navigate('/checkout', {
-            state: { quantities, ticketTypes, maxTicketsPerOrder },
+            state: {
+                event,
+                selectedTickets,
+                quantity: totalTickets,
+                subtotal: totalPrice,
+                serviceFee,
+                total,
+                currency,
+            },
         })
     }
 
@@ -41,8 +87,21 @@ export default function TicketSelector({
             (a, b) => a + b,
             0
         )
-        if (currentTotal >= maxTicketsPerOrder) return
-        setQuantities((prev) => ({ ...prev, [id]: prev[id] + 1 }))
+
+        const ticket = ticketTypes.find((item) => item.id === id)
+
+        if (
+            !ticket ||
+            currentTotal >= maxTicketsPerOrder ||
+            quantities[id] >= ticket.available
+        ) {
+            return
+        }
+
+        setQuantities((prev) => ({
+            ...prev,
+            [id]: prev[id] + 1,
+        }))
     }
 
     const handleDecrement = (id: string) => {
@@ -52,21 +111,13 @@ export default function TicketSelector({
         }))
     }
 
-    const totalTickets = Object.values(quantities).reduce((a, b) => a + b, 0)
-
-    const totalPrice = ticketTypes.reduce(
-        (total, ticket) => total + quantities[ticket.id] * ticket.price,
-        0
-    )
-
-    const currency = ticketTypes[0]?.currency ?? 'GHS'
-
     return (
-        <div className="bg-card border rounded-lg shadow-sm p-4 sticky top-6">
-            <h2 className="text-xl font-bold text-primary mb-1">
+        <div className="sticky top-6 rounded-lg border bg-card p-4 shadow-sm">
+            <h2 className="mb-1 text-xl font-bold text-primary">
                 Choose tickets
             </h2>
-            <p className="text-sm text-primary mb-6">
+
+            <p className="mb-6 text-sm text-primary">
                 Max {maxTicketsPerOrder} tickets per order
             </p>
 
@@ -75,6 +126,7 @@ export default function TicketSelector({
                     const isLowStock =
                         ticket.lowStockThreshold &&
                         ticket.available <= ticket.lowStockThreshold
+
                     const canIncrement =
                         totalTickets < maxTicketsPerOrder &&
                         quantities[ticket.id] < ticket.available
@@ -82,47 +134,45 @@ export default function TicketSelector({
                     return (
                         <div
                             key={ticket.id}
-                            className="flex justify-between items-start border-b border-gray-100 pb-4 last:border-0 last:pb-0"
+                            className="flex items-start justify-between border-b border-gray-100 pb-4 last:border-0 last:pb-0"
                         >
                             <div className="flex-1 pr-4">
                                 <h3 className="font-semibold text-primary">
                                     {ticket.name}
                                 </h3>
+
                                 <p className="text-lg font-bold text-[#1a6e44]">
                                     {ticket.currency} {ticket.price.toFixed(2)}
                                 </p>
-                                {isLowStock ? (
-                                    <p className="text-xs text-red-500 font-medium mt-1">
-                                        Only {ticket.available} left
-                                    </p>
-                                ) : (
-                                    <p className="text-xs text-primary mt-1">
-                                        {ticket.available} available
-                                    </p>
-                                )}
+
+                                <p className="mt-1 text-xs text-primary">
+                                    {isLowStock
+                                        ? `Only ${ticket.available} left`
+                                        : `${ticket.available} available`}
+                                </p>
                             </div>
 
                             <div className="flex items-center gap-3">
                                 <button
-                                    title="Remove Ticket"
-                                    aria-label="Remove a ticket"
                                     type="button"
+                                    aria-label="Remove a ticket"
                                     onClick={() => handleDecrement(ticket.id)}
                                     disabled={quantities[ticket.id] === 0}
-                                    className="w-8 h-8 flex items-center justify-center rounded border border-gray-300 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="flex h-8 w-8 items-center justify-center rounded border border-gray-300 disabled:opacity-50"
                                 >
                                     -
                                 </button>
+
                                 <span className="w-4 text-center font-medium">
                                     {quantities[ticket.id]}
                                 </span>
+
                                 <button
-                                    title="Add Ticket"
-                                    aria-label="Add one more ticket"
                                     type="button"
+                                    aria-label="Add one more ticket"
                                     onClick={() => handleIncrement(ticket.id)}
                                     disabled={!canIncrement}
-                                    className="w-8 h-8 flex items-center justify-center rounded border border-gray-300 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="flex h-8 w-8 items-center justify-center rounded border border-gray-300 disabled:opacity-50"
                                 >
                                     +
                                 </button>
@@ -132,25 +182,29 @@ export default function TicketSelector({
                 })}
             </div>
 
-            <div className="mt-8 pt-4 border-t border-gray-200">
-                <div className="flex justify-between items-center mb-4">
+            <div className="mt-8 border-t border-gray-200 pt-4">
+                <div className="mb-4 flex items-center justify-between">
                     <span className="text-gray-600">
-                        {totalTickets} ticket{totalTickets !== 1 ? 's' : ''}
+                        {totalTickets} ticket
+                        {totalTickets !== 1 ? 's' : ''}
                     </span>
+
                     <span className="text-xl font-extrabold text-gray-900">
-                        {currency} {totalPrice.toFixed(2)}
+                        {currency} {total.toFixed(2)}
                     </span>
                 </div>
+
                 <CustomButton
                     variant="primary"
-                    disabled={totalTickets === 0}
+                    disabled={totalTickets === 0 || isInitializing}
                     onClick={handleCheckout}
-                    className="w-full bg-[#1a6e44] hover:bg-[#145c38] text-white font-bold py-3 px-4 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-[#1a6e44] py-3 font-bold text-white"
                 >
                     CONTINUE TO CHECKOUT
                 </CustomButton>
-                <p className="text-xs text-center text-gray-500 pt-3 flex items-center justify-center gap-1">
-                    <Lock className="w-3 h-3" />
+
+                <p className="flex items-center justify-center gap-1 pt-3 text-center text-xs text-gray-500">
+                    <Lock className="h-3 w-3" />
                     Pay with mobile money. No card needed.
                 </p>
             </div>
