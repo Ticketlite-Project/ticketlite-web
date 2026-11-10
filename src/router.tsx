@@ -1,24 +1,25 @@
-
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { PublicOnlyRoute } from './components/auth/PublicOnlyRoute'
 import { Page } from './components/Page'
 import { MainLayout } from './layouts/MainLayout'
 
 import {
-    CreateEvent,
+    AdminDashboard,
     Checkout,
+    CreateEvent,
     EventDetails,
     EventsDashboard,
     Home,
     Login,
+    Logout,
+    MobileMoneyPaymentFlow,
     MyTickets,
     NotFound,
     OrganisersGetAllPage,
     Signup,
-    MobileMoneyPaymentFlow,
 } from './routes/lazyPages'
 
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter } from 'react-router'
 
 export const router = createBrowserRouter([
     {
@@ -41,16 +42,6 @@ export const router = createBrowserRouter([
                 ),
             },
 
-            // My tickets
-            {
-                path: 'my-tickets',
-                element: (
-                    <Page>
-                        <MyTickets />
-                    </Page>
-                ),
-            },
-
             // Events
             {
                 path: 'events',
@@ -67,6 +58,16 @@ export const router = createBrowserRouter([
                 element: (
                     <Page>
                         <EventDetails />
+                    </Page>
+                ),
+            },
+
+            // Logout page
+            {
+                path: 'logout',
+                element: (
+                    <Page>
+                        <Logout />
                     </Page>
                 ),
             },
@@ -98,7 +99,15 @@ export const router = createBrowserRouter([
             {
                 element: <ProtectedRoute />,
                 children: [
-                    // Checkout
+                    // My tickets
+                    {
+                        path: 'my-tickets',
+                        element: (
+                            <Page>
+                                <MyTickets />
+                            </Page>
+                        ),
+                    },
                     {
                         path: 'checkout',
                         element: (
@@ -107,8 +116,6 @@ export const router = createBrowserRouter([
                             </Page>
                         ),
                     },
-
-                    // Mobile Money Payment
                     {
                         path: 'payment/mobile-money',
                         element: (
@@ -117,8 +124,6 @@ export const router = createBrowserRouter([
                             </Page>
                         ),
                     },
-
-                    // Organisers
                     {
                         path: 'organisers',
                         element: (
@@ -127,8 +132,6 @@ export const router = createBrowserRouter([
                             </Page>
                         ),
                     },
-
-                    // Create event
                     {
                         path: 'organisers/create-event',
                         element: (
@@ -137,14 +140,22 @@ export const router = createBrowserRouter([
                             </Page>
                         ),
                     },
-
-                    // Organiser dashboard
                     {
                         path: 'organisers/:id',
                         element: (
                             <Page>
                                 <EventsDashboard />
                             </Page>
+                        ),
+                    },
+                    {
+                        path: 'admin',
+                        element: (
+                            <ProtectedRoute allowedRoles={['ADMIN']}>
+                                <Page>
+                                    <AdminDashboard />
+                                </Page>
+                            </ProtectedRoute>
                         ),
                     },
                 ],
