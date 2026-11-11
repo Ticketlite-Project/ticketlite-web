@@ -27,7 +27,9 @@ export function Navbar() {
     const navigate = useNavigate()
 
     const returnState = { from: location }
-    const isLoginPage = location.pathname === '/login'
+    const isLoginPage =
+        location.pathname === '/login' ||
+        location.pathname.startsWith('/signup')
 
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
@@ -61,7 +63,7 @@ export function Navbar() {
     const getNavLinks = (): NavItem[] => {
         if (isAdmin) {
             return [
-                { to: '/organisers', label: 'Organisers' },
+                { to: '/admin', label: 'Organisers' },
                 { to: '/admin/users', label: 'Users' },
                 { to: '/admin/platform-numbers', label: 'Platform Numbers' },
             ]
@@ -98,7 +100,7 @@ export function Navbar() {
                     </Link>
 
                     {isAdmin && (
-                        <span className="rounded-md bg-ticket-warning-bg px-2 py-0.5 text-xs font-semibold text-ticket-warning-fg">
+                        <span className="rounded bg-ticket-warning-bg px-2 py-1.5 text-xs font-semibold text-ticket-warning-fg">
                             Admin
                         </span>
                     )}
