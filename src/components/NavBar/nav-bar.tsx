@@ -15,6 +15,12 @@ import { useAuth } from '../../hooks/useAuth'
 import { CustomButton } from '../Button/custom-button'
 import { AppNavLink } from './nav-link'
 
+interface NavItem {
+    to: string
+    label: string
+    icon?: React.ReactNode
+}
+
 export function Navbar() {
     const { user, isAuthenticated, logout } = useAuth()
     const location = useLocation()
@@ -44,13 +50,37 @@ export function Navbar() {
 
     const handleLogout = () => {
         logout()
-        toast.success('Logged out successfully')
+        toast.success('Logged out successfully', { duration: 3500 })
         navigate('/logout', { replace: true })
     }
 
-    // Role checks based on exact UserRole type: 'ATTENDEE' | 'ORGANIZER' | 'GATE_STAFF' | 'ADMIN'
     const isAdmin = user?.role === 'ADMIN'
-    const isOrganizerOrAdmin = user?.role === 'ORGANIZER' || isAdmin
+    const isOrganizer = user?.role === 'ORGANIZER'
+
+    // Dynamic Navigation Links Configuration based on User Role
+    const getNavLinks = (): NavItem[] => {
+        if (isAdmin) {
+            return [
+                { to: '/organisers', label: 'Organisers' },
+                { to: '/admin/users', label: 'Users' },
+                { to: '/admin/platform-numbers', label: 'Platform Numbers' },
+            ]
+        }
+
+        // Standard links for Attendee / Organizer / Guest
+        const links: NavItem[] = [
+            { to: '/', label: 'Events' },
+            { to: '/my-tickets', label: 'My tickets' },
+        ]
+
+        if (isAdmin || isOrganizer) {
+            links.push({ to: '/organisers', label: 'For organisers' })
+        }
+
+        return links
+    }
+
+    const navLinks = getNavLinks()
 
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background">
@@ -67,26 +97,27 @@ export function Navbar() {
                         </span>
                     </Link>
 
+                    {isAdmin && (
+                        <span className="rounded-md bg-ticket-warning-bg px-2 py-0.5 text-xs font-semibold text-ticket-warning-fg">
+                            Admin
+                        </span>
+                    )}
+
                     {!isLoginPage && (
                         <nav className="hidden items-center gap-6 md:flex">
-                            <AppNavLink to="/">Events</AppNavLink>
-                            <AppNavLink to="/my-tickets">My tickets</AppNavLink>
-
-                            {isOrganizerOrAdmin && (
-                                <AppNavLink to="/organisers">
-                                    For organisers
-                                </AppNavLink>
-                            )}
-
-                            {isAdmin && (
+                            {navLinks.map((link) => (
                                 <AppNavLink
-                                    to="/admin"
-                                    className="flex items-center gap-1.5 text-primary font-semibold"
+                                    key={link.to}
+                                    to={link.to}
+                                    className={
+                                        isAdmin && link.label === 'Admin'
+                                            ? 'flex items-center gap-1.5 font-semibold text-primary'
+                                            : ''
+                                    }
                                 >
-                                    <Shield className="h-4 w-4" />
-                                    Admin
+                                    {link.label}
                                 </AppNavLink>
-                            )}
+                            ))}
                         </nav>
                     )}
                 </div>
@@ -177,15 +208,17 @@ export function Navbar() {
 
                                             <DropdownMenuSeparator />
 
-                                            <DropdownMenuItem
-                                                onClick={() =>
-                                                    navigate('/my-tickets')
-                                                }
-                                                className="cursor-pointer"
-                                            >
-                                                <Ticket className="mr-2 h-4 w-4" />
-                                                <span>My Tickets</span>
-                                            </DropdownMenuItem>
+                                            {!isAdmin && (
+                                                <DropdownMenuItem
+                                                    onClick={() =>
+                                                        navigate('/my-tickets')
+                                                    }
+                                                    className="cursor-pointer"
+                                                >
+                                                    <Ticket className="mr-2 h-4 w-4" />
+                                                    <span>My Tickets</span>
+                                                </DropdownMenuItem>
+                                            )}
 
                                             {isAdmin && (
                                                 <DropdownMenuItem
@@ -242,42 +275,19 @@ export function Navbar() {
             {mobileMenuOpen && !isLoginPage && (
                 <div className="absolute left-0 right-0 top-full border-b bg-background px-4 py-5 shadow-lg md:hidden">
                     <nav className="flex flex-col gap-4">
-                        <AppNavLink
-                            to="/"
-                            className="py-2"
-                            onClick={() => setMobileMenuOpen(false)}
-                        >
-                            Events
-                        </AppNavLink>
-
-                        <AppNavLink
-                            to="/my-tickets"
-                            className="py-2"
-                            onClick={() => setMobileMenuOpen(false)}
-                        >
-                            My tickets
-                        </AppNavLink>
-
-                        {isOrganizerOrAdmin && (
+                        {navLinks.map((link) => (
                             <AppNavLink
-                                to="/organisers"
-                                className="py-2"
-                                onClick={() => setMobileMenuOpen(false)}
-                            >
-                                For organisers
-                            </AppNavLink>
-                        )}
-
-                        {isAdmin && (
-                            <AppNavLink
-                                to="/admin"
+                                key={link.to}
+                                to={link.to}
                                 className="py-2 flex items-center gap-2"
                                 onClick={() => setMobileMenuOpen(false)}
                             >
-                                <Shield className="h-4 w-4" />
-                                Admin Dashboard
+                                {isAdmin && link.label === 'Admin' && (
+                                    <Shield className="h-4 w-4" />
+                                )}
+                                {link.label}
                             </AppNavLink>
-                        )}
+                        ))}
                     </nav>
 
                     <div className="mt-5 flex gap-2 border-t pt-4">
