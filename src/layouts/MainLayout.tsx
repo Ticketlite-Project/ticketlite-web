@@ -19,7 +19,7 @@ export function MainLayout() {
                 {/* Main content area */}
                 <Outlet />
 
-                <Toaster position="top-right" richColors closeButton />
+                <Toaster position="top-right" closeButton />
             </div>
 
             <Footer />

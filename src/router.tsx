@@ -5,6 +5,8 @@ import { MainLayout } from './layouts/MainLayout'
 
 import {
     AdminDashboard,
+    AdminPlatformNumbers,
+    AdminUsers,
     Checkout,
     CreateEvent,
     EventDetails,
@@ -154,6 +156,26 @@ export const router = createBrowserRouter([
                             <ProtectedRoute allowedRoles={['ADMIN']}>
                                 <Page>
                                     <AdminDashboard />
+                                </Page>
+                            </ProtectedRoute>
+                        ),
+                    },
+                    {
+                        path: 'admin/users',
+                        element: (
+                            <ProtectedRoute allowedRoles={['ADMIN']}>
+                                <Page>
+                                    <AdminUsers />
+                                </Page>
+                            </ProtectedRoute>
+                        ),
+                    },
+                    {
+                        path: 'admin/platform-numbers',
+                        element: (
+                            <ProtectedRoute allowedRoles={['ADMIN']}>
+                                <Page>
+                                    <AdminPlatformNumbers />
                                 </Page>
                             </ProtectedRoute>
                         ),

@@ -3,6 +3,10 @@ import { lazy } from 'react'
 export const Home = lazy(() => import('../pages/Home'))
 
 export const AdminDashboard = lazy(() => import('../pages/AdminDashboard'))
+export const AdminUsers = lazy(() => import('../pages/AdminUsers'))
+export const AdminPlatformNumbers = lazy(
+    () => import('../pages/AdminPlatformNumbers')
+)
 
 export const EventDetails = lazy(() => import('../pages/EventDetails'))
 

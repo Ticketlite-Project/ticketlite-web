@@ -1,12 +1,3 @@
-import { Button } from '@/components/ui/button'
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Input } from '@/components/ui/input'
 import {
     Table,
     TableBody,
@@ -17,25 +8,28 @@ import {
 } from '@/components/ui/table'
 import {
     columnFilteringFeature,
+    coreRowModelsFeature,
     createColumnHelper,
     createFilteredRowModel,
     createPaginatedRowModel,
     createSortedRowModel,
-    globalFilteringFeature,
     rowPaginationFeature,
     rowSortingFeature,
     tableFeatures,
-    type SortingState,
     useTable,
+    type SortingState,
 } from '@tanstack/react-table'
-import { MoreHorizontal, Search, Shield } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { initialUsers } from '../mock/mock-user'
-import type { User, UserRole } from '../types/auth'
+import { CustomButton } from '../components/Button/custom-button'
+import {
+    mockOrganisers,
+    type OrganiserRequest,
+    type OrganiserStatus,
+} from '../mock/mock-user'
 
 const adminTableFeatures = tableFeatures({
     columnFilteringFeature,
-    globalFilteringFeature,
+    coreRowModelsFeature,
     rowSortingFeature,
     rowPaginationFeature,
     filteredRowModel: createFilteredRowModel(),
@@ -43,165 +37,260 @@ const adminTableFeatures = tableFeatures({
     paginatedRowModel: createPaginatedRowModel(),
 })
 
-const columnHelper = createColumnHelper<typeof adminTableFeatures, User>()
+const columnHelper = createColumnHelper<
+    typeof adminTableFeatures,
+    OrganiserRequest
+>()
 
-const getRoleBadgeClass = (role: UserRole) => {
-    switch (role) {
-        case 'ADMIN':
-            return 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300'
-        case 'ORGANIZER':
-            return 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300'
-        case 'GATE_STAFF':
-            return 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
-        default:
-            return 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'
-    }
+const getInitials = (name: string) => {
+    return name
+        .split(' ')
+        .map((part) => part[0])
+        .join('')
+        .substring(0, 2)
+        .toUpperCase()
 }
 
 export default function AdminDashboard() {
-    const [data, setData] = useState<User[]>(initialUsers)
+    const [data, setData] = useState<OrganiserRequest[]>(mockOrganisers)
+    const [activeTab, setActiveTab] = useState<OrganiserStatus>('PENDING')
     const [sorting, setSorting] = useState<SortingState>([])
-    const [globalFilter, setGlobalFilter] = useState('')
+
+    const handleStatusChange = (id: string, newStatus: OrganiserStatus) => {
+        setData((currentData) =>
+            currentData.map((item) =>
+                item.id === id ? { ...item, status: newStatus } : item
+            )
+        )
+    }
+
+    // Filter table data based on active tab
+    const filteredData = useMemo(() => {
+        return data.filter((item) => item.status === activeTab)
+    }, [data, activeTab])
+
+    // Count statistics for tab badges
+    const pendingCount = useMemo(
+        () => data.filter((item) => item.status === 'PENDING').length,
+        [data]
+    )
+    const approvedCount = useMemo(
+        () => data.filter((item) => item.status === 'APPROVED').length,
+        [data]
+    )
+    const rejectedCount = useMemo(
+        () => data.filter((item) => item.status === 'REJECTED').length,
+        [data]
+    )
 
     const columns = useMemo(
         () =>
             columnHelper.columns([
-                columnHelper.accessor(
-                    (user) => `${user.first_name} ${user.last_name}`,
-                    {
-                        id: 'name',
-                        header: 'Name',
-                        cell: (info) => (
-                            <div className="font-medium">{info.getValue()}</div>
-                        ),
-                    }
-                ),
-                columnHelper.accessor('username', {
-                    header: 'Username',
-                }),
-                columnHelper.accessor('email', {
-                    header: 'Email',
-                }),
-                columnHelper.accessor('role', {
-                    header: 'Role',
+                columnHelper.accessor('name', {
+                    header: 'ORGANISER',
                     cell: (info) => {
-                        const role = info.getValue()
+                        const name = info.getValue()
+                        const category = info.row.original.category
+                        const initials = getInitials(name)
                         return (
-                            <span
-                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${getRoleBadgeClass(role)}`}
-                            >
-                                {role}
-                            </span>
+                            <div className="flex items-center gap-3 py-1">
+                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 font-bold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                                    {initials}
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="font-bold text-foreground">
+                                        {name}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
+                                        {category}
+                                    </span>
+                                </div>
+                            </div>
                         )
                     },
                 }),
+                columnHelper.accessor('contactName', {
+                    header: 'CONTACT',
+                    cell: (info) => {
+                        const contact = info.getValue()
+                        const email = info.row.original.email
+                        return (
+                            <div className="flex flex-col">
+                                <span className="font-medium text-foreground">
+                                    {contact}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                    {email}
+                                </span>
+                            </div>
+                        )
+                    },
+                }),
+                columnHelper.accessor('appliedDate', {
+                    header: 'APPLIED',
+                    cell: (info) => (
+                        <span className="text-sm text-muted-foreground">
+                            {info.getValue()}
+                        </span>
+                    ),
+                }),
+                columnHelper.accessor('drafts', {
+                    header: 'DRAFTS',
+                    cell: (info) => (
+                        <span className="text-sm text-muted-foreground">
+                            {info.getValue()}
+                        </span>
+                    ),
+                }),
                 columnHelper.display({
                     id: 'actions',
+                    header: () => <div className="text-right">DECISION</div>,
                     cell: ({ row }) => {
-                        const user = row.original
+                        const item = row.original
                         return (
-                            <DropdownMenu>
-                                <DropdownMenuTrigger
-                                    render={
-                                        <Button
-                                            variant="ghost"
-                                            className="h-8 w-8 p-0"
-                                        >
-                                            <span className="sr-only">
-                                                Open menu
-                                            </span>
-                                            <MoreHorizontal className="h-4 w-4" />
-                                        </Button>
-                                    }
-                                />
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuLabel>
-                                        Actions
-                                    </DropdownMenuLabel>
-                                    <DropdownMenuItem
+                            <div className="flex items-center justify-end gap-2">
+                                {activeTab !== 'REJECTED' && (
+                                    <CustomButton
+                                        variant="secondary"
+                                        size="sm"
+                                        bordered
+                                        rounded
                                         onClick={() =>
-                                            alert(
-                                                `Edit role for ${user.username}`
+                                            handleStatusChange(
+                                                item.id,
+                                                'REJECTED'
+                                            )
+                                        }
+                                        className=" text-red-600 hover:bg-red-50 border-gray-100  dark:border-red-900/50 dark:bg-transparent dark:text-red-400"
+                                    >
+                                        Reject
+                                    </CustomButton>
+                                )}
+                                {activeTab !== 'APPROVED' && (
+                                    <CustomButton
+                                        variant="primary"
+                                        size="sm"
+                                        onClick={() =>
+                                            handleStatusChange(
+                                                item.id,
+                                                'APPROVED'
                                             )
                                         }
                                     >
-                                        Change Role
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        className="text-red-600"
-                                        onClick={() =>
-                                            setData((currentData) =>
-                                                currentData.filter(
-                                                    (currentUser) =>
-                                                        currentUser.id !==
-                                                        user.id
-                                                )
-                                            )
-                                        }
-                                    >
-                                        Remove User
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                                        Approve
+                                    </CustomButton>
+                                )}
+                            </div>
                         )
                     },
                 }),
             ]),
-        [setData]
+        [activeTab]
     )
 
     const table = useTable(
         {
             features: adminTableFeatures,
-            data,
+            data: filteredData,
             columns,
             state: {
                 sorting,
-                globalFilter,
             },
             onSortingChange: setSorting,
-            onGlobalFilterChange: setGlobalFilter,
         },
         (state) => ({
             sorting: state.sorting,
-            globalFilter: state.globalFilter,
         })
     )
 
     return (
         <div className="mx-auto max-w-7xl px-4 py-8 md:px-8">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
-                <div>
-                    <h1 className="text-3xl font-extrabold tracking-tight flex items-center gap-2">
-                        <Shield className="h-8 w-8 text-primary" /> Admin
-                        Control Panel
-                    </h1>
-                    <p className="text-muted-foreground mt-1">
-                        Manage user accounts, system roles, and platform
-                        permissions.
-                    </p>
-                </div>
-                <div className="flex items-center gap-3">
-                    <div className="relative">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder="Search users..."
-                            value={globalFilter ?? ''}
-                            onChange={(e) => setGlobalFilter(e.target.value)}
-                            className="pl-9 w-[250px]"
-                        />
-                    </div>
-                </div>
+            {/* Sub-header */}
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                ORGANISER REQUESTS
+            </span>
+
+            {/* Page Heading */}
+            <h1 className="mt-1 text-3xl font-black tracking-tight text-foreground md:text-4xl">
+                Approve organisers
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+                Only approved organisers can publish events. Check that each
+                request looks like a real person or group before approving.
+            </p>
+
+            {/* Status Tabs */}
+            <div className="mt-8 flex items-center gap-6 border-b pb-3">
+                <button
+                    type="button"
+                    onClick={() => setActiveTab('PENDING')}
+                    className={`relative flex items-center gap-2 pb-1 text-sm font-bold transition-colors ${
+                        activeTab === 'PENDING'
+                            ? 'text-foreground'
+                            : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                >
+                    Pending{''}
+                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-700 px-1.5 text-xs font-bold text-white">
+                        {pendingCount}
+                    </span>
+                    {activeTab === 'PENDING' && (
+                        <span className="absolute -bottom-3.5 left-0 right-0 h-0.75 rounded-t bg-emerald-700" />
+                    )}
+                </button>
+
+                <button
+                    type="button"
+                    onClick={() => setActiveTab('APPROVED')}
+                    className={`relative flex items-center gap-2 pb-1 text-sm font-bold transition-colors ${
+                        activeTab === 'APPROVED'
+                            ? 'text-foreground'
+                            : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                >
+                    Approved
+                    {approvedCount > 0 && (
+                        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-muted px-1.5 text-xs font-bold text-muted-foreground">
+                            {approvedCount}
+                        </span>
+                    )}
+                    {activeTab === 'APPROVED' && (
+                        <span className="absolute -bottom-3.5 left-0 right-0 h-0.75 rounded-t bg-emerald-700" />
+                    )}
+                </button>
+
+                <button
+                    type="button"
+                    onClick={() => setActiveTab('REJECTED')}
+                    className={`relative flex items-center gap-2 pb-1 text-sm font-bold transition-colors ${
+                        activeTab === 'REJECTED'
+                            ? 'text-foreground'
+                            : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                >
+                    Rejected
+                    {rejectedCount > 0 && (
+                        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-muted px-1.5 text-xs font-bold text-muted-foreground">
+                            {rejectedCount}
+                        </span>
+                    )}
+                    {activeTab === 'REJECTED' && (
+                        <span className="absolute -bottom-3.5 left-0 right-0 h-0.75 rounded-t bg-emerald-700" />
+                    )}
+                </button>
             </div>
 
-            {/* TanStack Table wrapped with Shadcn UI components */}
-            <div className="rounded-md border bg-card shadow-sm overflow-hidden">
+            {/* Table Container */}
+            <div className="mt-6 rounded-lg border bg-card shadow-sm">
                 <Table>
-                    <TableHeader>
+                    <TableHeader className="bg-muted/30">
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id}>
                                 {headerGroup.headers.map((header) => (
-                                    <TableHead key={header.id}>
+                                    <TableHead
+                                        key={header.id}
+                                        className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground"
+                                    >
                                         {header.isPlaceholder ? null : (
                                             <table.FlexRender header={header} />
                                         )}
@@ -225,34 +314,14 @@ export default function AdminDashboard() {
                             <TableRow>
                                 <TableCell
                                     colSpan={columns.length}
-                                    className="h-24 text-center"
+                                    className="h-32 text-center text-sm text-muted-foreground"
                                 >
-                                    No users found.
+                                    No {activeTab.toLowerCase()} requests found.
                                 </TableCell>
                             </TableRow>
                         )}
                     </TableBody>
                 </Table>
-            </div>
-
-            {/* Pagination Controls */}
-            <div className="flex items-center justify-end space-x-2 py-4">
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => table.previousPage()}
-                    disabled={!table.getCanPreviousPage()}
-                >
-                    Previous
-                </Button>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => table.nextPage()}
-                    disabled={!table.getCanNextPage()}
-                >
-                    Next
-                </Button>
             </div>
         </div>
     )
