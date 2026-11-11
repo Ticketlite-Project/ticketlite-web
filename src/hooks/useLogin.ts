@@ -22,7 +22,7 @@ export function useLogin(returnTo = '/') {
         onSuccess: ({ tokens, userData }) => {
             // 3. Update global state and redirect
             login(tokens, userData)
-            toast.success('Login successful')
+            toast.success('Login successful', { duration: 3500 })
             navigate(returnTo, { replace: true })
         },
         onError: (error: Error) => {
@@ -30,6 +30,7 @@ export function useLogin(returnTo = '/') {
                 description:
                     error.message ??
                     'Please check your connection and try again.',
+                duration: 3500,
             })
         },
     })
