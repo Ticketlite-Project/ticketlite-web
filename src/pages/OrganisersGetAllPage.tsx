@@ -278,7 +278,7 @@ export default function OrganisersGetAllPage() {
                             </button>
 
                             <button
-                                onClick={() => navigate('/create-event')}
+                                onClick={() => navigate('/organisers/create-event')}
                                 className="flex shrink-0 items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-medium text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800"
                             >
                                 <Plus size={17} />
@@ -339,7 +339,7 @@ export default function OrganisersGetAllPage() {
                             </div>
 
                             <button
-                                onClick={() => navigate('/create-event')}
+                                onClick={() => navigate('/organisers/create-event')}
                                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-green-700 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-green-800"
                             >
                                 <Plus size={17} />
