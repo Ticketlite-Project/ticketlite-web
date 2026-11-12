@@ -22,6 +22,7 @@ export type RegisterData = {
     username: string
     email: string
     password: string
+    role: 'attendee' | 'organizer'
 }
 
 export type AuthResponse = {
