@@ -1,4 +1,3 @@
-
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -16,6 +15,7 @@ import {
     X,
     Ban,
 } from 'lucide-react'
+import { CustomButton } from '../components/Button/custom-button'
 
 type EventStatus = 'published' | 'draft' | 'ended' | 'cancelled'
 
@@ -91,16 +91,9 @@ const initialEvents: OrganiserEvent[] = [
     },
 ]
 
-const filters: FilterTab[] = [
-    'All',
-    'Published',
-    'Drafts',
-    'Past',
-    'Cancelled',
-]
+const filters: FilterTab[] = ['All', 'Published', 'Drafts', 'Past', 'Cancelled']
 
-const formatMoney = (amount: number) =>
-    `GHS ${amount.toLocaleString('en-GH')}`
+const formatMoney = (amount: number) => `GHS ${amount.toLocaleString('en-GH')}`
 
 export default function OrganisersGetAllPage() {
     const navigate = useNavigate()
@@ -120,24 +113,24 @@ export default function OrganisersGetAllPage() {
 
     const totalSold = events.reduce((sum, event) => sum + event.sold, 0)
 
-    const totalRevenue = events.reduce(
-        (sum, event) => sum + event.revenue,
-        0
-    )
+    const totalRevenue = events.reduce((sum, event) => sum + event.revenue, 0)
 
     const counts: Record<FilterTab, number> = {
         All: events.length,
-        Published: events.filter((event) => event.status === 'published').length,
+        Published: events.filter((event) => event.status === 'published')
+            .length,
         Drafts: events.filter((event) => event.status === 'draft').length,
         Past: events.filter((event) => event.status === 'ended').length,
-        Cancelled: events.filter((event) => event.status === 'cancelled').length,
+        Cancelled: events.filter((event) => event.status === 'cancelled')
+            .length,
     }
 
     const visibleEvents = useMemo(() => {
         return events.filter((event) => {
             const matchesFilter =
                 activeFilter === 'All' ||
-                (activeFilter === 'Published' && event.status === 'published') ||
+                (activeFilter === 'Published' &&
+                    event.status === 'published') ||
                 (activeFilter === 'Drafts' && event.status === 'draft') ||
                 (activeFilter === 'Past' && event.status === 'ended') ||
                 (activeFilter === 'Cancelled' && event.status === 'cancelled')
@@ -153,10 +146,7 @@ export default function OrganisersGetAllPage() {
     const toggleDarkMode = () => {
         const nextValue = !darkMode
         setDarkMode(nextValue)
-        localStorage.setItem(
-            'ticketlite-organiser-dark',
-            String(nextValue)
-        )
+        localStorage.setItem('ticketlite-organiser-dark', String(nextValue))
     }
 
     const showNotice = (message: string) => {
@@ -202,9 +192,7 @@ export default function OrganisersGetAllPage() {
 
         setEvents((current) =>
             current.map((event) =>
-                event.id === eventId
-                    ? { ...event, status: 'cancelled' }
-                    : event
+                event.id === eventId ? { ...event, status: 'cancelled' } : event
             )
         )
 
@@ -249,7 +237,6 @@ export default function OrganisersGetAllPage() {
     return (
         <div className={`min-h-screen ${pageTheme}`}>
             <div className="flex min-h-screen flex-col md:flex-row">
-
                 {/* SIDEBAR */}
                 <aside
                     className={`flex w-full flex-col border-r md:sticky md:top-0 md:h-screen md:w-60 md:shrink-0 ${panelTheme}`}
@@ -269,16 +256,19 @@ export default function OrganisersGetAllPage() {
                         </p>
 
                         <nav className="flex gap-2 overflow-x-auto md:flex-col">
-                            <button
+                            <CustomButton
+                                variant="secondary"
                                 onClick={() => navigate('/organisers')}
                                 className="flex shrink-0 items-center gap-3 rounded-lg bg-emerald-50 px-3 py-3 text-left text-sm font-bold text-green-800 dark:bg-green-950 dark:text-green-300"
                             >
                                 <CalendarDays size={17} />
                                 My events
-                            </button>
+                            </CustomButton>
 
                             <button
-                                onClick={() => navigate('/organisers/create-event')}
+                                onClick={() =>
+                                    navigate('/organisers/create-event')
+                                }
                                 className="flex shrink-0 items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-medium text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800"
                             >
                                 <Plus size={17} />
@@ -326,7 +316,6 @@ export default function OrganisersGetAllPage() {
                 {/* MAIN CONTENT */}
                 <main className="min-w-0 flex-1">
                     <div className="mx-auto max-w-7xl px-4 py-7 sm:px-6 lg:px-8">
-
                         {/* HEADER */}
                         <header className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                             <div>
@@ -338,13 +327,16 @@ export default function OrganisersGetAllPage() {
                                 </h1>
                             </div>
 
-                            <button
-                                onClick={() => navigate('/organisers/create-event')}
+                            <CustomButton
+                                variant="primary"
+                                onClick={() =>
+                                    navigate('/organisers/create-event')
+                                }
                                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-green-700 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-green-800"
                             >
                                 <Plus size={17} />
                                 CREATE EVENT
-                            </button>
+                            </CustomButton>
                         </header>
 
                         {/* SUMMARY CARDS */}
@@ -358,7 +350,9 @@ export default function OrganisersGetAllPage() {
                                 </p>
                             </div>
 
-                            <div className={`rounded-xl border p-5 ${panelTheme}`}>
+                            <div
+                                className={`rounded-xl border p-5 ${panelTheme}`}
+                            >
                                 <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                                     Tickets sold, all events
                                 </p>
@@ -367,7 +361,9 @@ export default function OrganisersGetAllPage() {
                                 </p>
                             </div>
 
-                            <div className={`rounded-xl border p-5 ${panelTheme}`}>
+                            <div
+                                className={`rounded-xl border p-5 ${panelTheme}`}
+                            >
                                 <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                                     Gross revenue, all events
                                 </p>
@@ -378,7 +374,9 @@ export default function OrganisersGetAllPage() {
                         </section>
 
                         {/* EVENTS PANEL */}
-                        <section className={`overflow-visible rounded-xl border ${panelTheme}`}>
+                        <section
+                            className={`overflow-visible rounded-xl border ${panelTheme}`}
+                        >
                             {/* FILTERS AND SEARCH */}
                             <div className="flex flex-col gap-4 border-b border-inherit px-4 pt-4 sm:px-5">
                                 <div className="flex flex-wrap items-center justify-between gap-3">
@@ -386,7 +384,9 @@ export default function OrganisersGetAllPage() {
                                         {filters.map((filter) => (
                                             <button
                                                 key={filter}
-                                                onClick={() => setActiveFilter(filter)}
+                                                onClick={() =>
+                                                    setActiveFilter(filter)
+                                                }
                                                 className={`shrink-0 border-b-2 pb-3 text-xs transition ${
                                                     activeFilter === filter
                                                         ? 'border-green-700 font-extrabold text-green-800 dark:text-green-400'
@@ -406,7 +406,9 @@ export default function OrganisersGetAllPage() {
                                         <input
                                             value={searchTerm}
                                             onChange={(event) =>
-                                                setSearchTerm(event.target.value)
+                                                setSearchTerm(
+                                                    event.target.value
+                                                )
                                             }
                                             placeholder="Search events"
                                             className={`w-full rounded-lg border py-2 pl-9 pr-3 text-xs outline-none focus:border-green-600 sm:w-44 ${
@@ -425,10 +427,16 @@ export default function OrganisersGetAllPage() {
                                     <thead>
                                         <tr className="border-b border-inherit text-[10px] font-bold uppercase tracking-wide text-slate-400">
                                             <th className="px-5 py-4">Event</th>
-                                            <th className="px-4 py-4">Status</th>
+                                            <th className="px-4 py-4">
+                                                Status
+                                            </th>
                                             <th className="px-4 py-4">Sold</th>
-                                            <th className="px-4 py-4">Revenue</th>
-                                            <th className="px-4 py-4 text-right">Actions</th>
+                                            <th className="px-4 py-4">
+                                                Revenue
+                                            </th>
+                                            <th className="px-4 py-4 text-right">
+                                                Actions
+                                            </th>
                                         </tr>
                                     </thead>
 
@@ -438,7 +446,9 @@ export default function OrganisersGetAllPage() {
                                                 event.capacity > 0
                                                     ? Math.min(
                                                           100,
-                                                          (event.sold / event.capacity) * 100
+                                                          (event.sold /
+                                                              event.capacity) *
+                                                              100
                                                       )
                                                     : 0
 
@@ -451,22 +461,34 @@ export default function OrganisersGetAllPage() {
                                                         <div className="flex items-center gap-3">
                                                             <div className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-md bg-emerald-50 text-green-800 dark:bg-emerald-950 dark:text-green-300">
                                                                 <span className="text-[8px] font-bold uppercase">
-                                                                    {event.date.split(' ')[0]}
+                                                                    {
+                                                                        event.date.split(
+                                                                            ' '
+                                                                        )[0]
+                                                                    }
                                                                 </span>
                                                                 <span className="text-sm font-extrabold">
-                                                                    {event.date.split(' ')[1]}
+                                                                    {
+                                                                        event.date.split(
+                                                                            ' '
+                                                                        )[1]
+                                                                    }
                                                                 </span>
                                                             </div>
 
                                                             <div className="min-w-0">
                                                                 <p className="max-w-52 text-xs font-extrabold">
-                                                                    {event.title}
+                                                                    {
+                                                                        event.title
+                                                                    }
                                                                 </p>
                                                                 <p className="mt-1 text-[10px] text-slate-400">
                                                                     {event.time}
                                                                 </p>
                                                                 <p className="text-[10px] text-slate-400">
-                                                                    {event.venue}
+                                                                    {
+                                                                        event.venue
+                                                                    }
                                                                 </p>
                                                             </div>
                                                         </div>
@@ -476,14 +498,17 @@ export default function OrganisersGetAllPage() {
                                                         <span
                                                             className={`inline-flex rounded px-2 py-1 text-[9px] font-extrabold ${statusStyle(event.status)}`}
                                                         >
-                                                            {statusLabel(event.status)}
+                                                            {statusLabel(
+                                                                event.status
+                                                            )}
                                                         </span>
                                                     </td>
 
                                                     <td className="px-4 py-4">
                                                         <div className="w-28">
                                                             <p className="mb-2 text-[10px] font-medium">
-                                                                {event.sold} / {event.capacity}
+                                                                {event.sold} /{' '}
+                                                                {event.capacity}
                                                             </p>
                                                             <div className="h-1 w-full overflow-hidden rounded-full bg-emerald-100 dark:bg-slate-700">
                                                                 <div
@@ -498,17 +523,22 @@ export default function OrganisersGetAllPage() {
 
                                                     <td className="px-4 py-4 text-xs font-medium">
                                                         {event.revenue > 0
-                                                            ? formatMoney(event.revenue)
+                                                            ? formatMoney(
+                                                                  event.revenue
+                                                              )
                                                             : '—'}
                                                     </td>
 
                                                     <td className="px-4 py-4">
                                                         <div className="flex items-center justify-end gap-2">
-                                                            {event.status === 'published' && (
+                                                            {event.status ===
+                                                                'published' && (
                                                                 <>
                                                                     <button
                                                                         onClick={() =>
-                                                                            navigate(`/organisers/events/${event.id}/edit`)
+                                                                            navigate(
+                                                                                `/organisers/events/${event.id}/edit`
+                                                                            )
                                                                         }
                                                                         className="rounded-md border border-slate-200 px-3 py-2 text-[10px] font-bold text-green-700 hover:bg-green-50 dark:border-slate-700"
                                                                     >
@@ -516,7 +546,9 @@ export default function OrganisersGetAllPage() {
                                                                     </button>
                                                                     <button
                                                                         onClick={() =>
-                                                                            navigate(`/organisers/events/${event.id}/dashboard`)
+                                                                            navigate(
+                                                                                `/organisers/events/${event.id}/dashboard`
+                                                                            )
                                                                         }
                                                                         className="rounded-md bg-green-700 px-3 py-2 text-[10px] font-bold text-white hover:bg-green-800"
                                                                     >
@@ -525,10 +557,13 @@ export default function OrganisersGetAllPage() {
                                                                 </>
                                                             )}
 
-                                                            {event.status === 'draft' && (
+                                                            {event.status ===
+                                                                'draft' && (
                                                                 <button
                                                                     onClick={() =>
-                                                                        navigate(`/organisers/events/${event.id}/edit`)
+                                                                        navigate(
+                                                                            `/organisers/events/${event.id}/edit`
+                                                                        )
                                                                     }
                                                                     className="rounded-md border border-slate-200 px-3 py-2 text-[10px] font-bold text-green-700 dark:border-slate-700"
                                                                 >
@@ -536,10 +571,13 @@ export default function OrganisersGetAllPage() {
                                                                 </button>
                                                             )}
 
-                                                            {event.status === 'ended' && (
+                                                            {event.status ===
+                                                                'ended' && (
                                                                 <button
                                                                     onClick={() =>
-                                                                        navigate(`/organisers/events/${event.id}/dashboard`)
+                                                                        navigate(
+                                                                            `/organisers/events/${event.id}/dashboard`
+                                                                        )
                                                                     }
                                                                     className="rounded-md border border-slate-200 px-3 py-2 text-[10px] font-bold text-green-700 dark:border-slate-700"
                                                                 >
@@ -547,10 +585,13 @@ export default function OrganisersGetAllPage() {
                                                                 </button>
                                                             )}
 
-                                                            {event.status === 'cancelled' && (
+                                                            {event.status ===
+                                                                'cancelled' && (
                                                                 <button
                                                                     onClick={() =>
-                                                                        navigate(`/events/${event.id}`)
+                                                                        navigate(
+                                                                            `/events/${event.id}`
+                                                                        )
                                                                     }
                                                                     className="rounded-md border border-slate-200 px-3 py-2 text-[10px] font-bold text-green-700 dark:border-slate-700"
                                                                 >
@@ -563,60 +604,101 @@ export default function OrganisersGetAllPage() {
                                                                     aria-label={`More actions for ${event.title}`}
                                                                     onClick={() =>
                                                                         setOpenMenu(
-                                                                            openMenu === event.id
+                                                                            openMenu ===
+                                                                                event.id
                                                                                 ? null
                                                                                 : event.id
                                                                         )
                                                                     }
                                                                     className="rounded-md p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
                                                                 >
-                                                                    <EllipsisVertical size={17} />
+                                                                    <EllipsisVertical
+                                                                        size={
+                                                                            17
+                                                                        }
+                                                                    />
                                                                 </button>
 
-                                                                {openMenu === event.id && (
-                                                                    <div className={`absolute right-0 top-10 z-30 w-48 rounded-lg border p-1 shadow-xl ${panelTheme}`}>
+                                                                {openMenu ===
+                                                                    event.id && (
+                                                                    <div
+                                                                        className={`absolute right-0 top-10 z-30 w-48 rounded-lg border p-1 shadow-xl ${panelTheme}`}
+                                                                    >
                                                                         <button
                                                                             onClick={() => {
-                                                                                navigate(`/events/${event.id}`)
-                                                                                setOpenMenu(null)
+                                                                                navigate(
+                                                                                    `/events/${event.id}`
+                                                                                )
+                                                                                setOpenMenu(
+                                                                                    null
+                                                                                )
                                                                             }}
                                                                             className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
                                                                         >
-                                                                            <Eye size={14} />
-                                                                            View public page
+                                                                            <Eye
+                                                                                size={
+                                                                                    14
+                                                                                }
+                                                                            />
+                                                                            View
+                                                                            public
+                                                                            page
                                                                         </button>
 
                                                                         <button
                                                                             onClick={() =>
-                                                                                void copyEventLink(event.id)
+                                                                                void copyEventLink(
+                                                                                    event.id
+                                                                                )
                                                                             }
                                                                             className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
                                                                         >
-                                                                            <Copy size={14} />
-                                                                            Copy event link
+                                                                            <Copy
+                                                                                size={
+                                                                                    14
+                                                                                }
+                                                                            />
+                                                                            Copy
+                                                                            event
+                                                                            link
                                                                         </button>
 
                                                                         <button
                                                                             onClick={() =>
-                                                                                duplicateEvent(event)
+                                                                                duplicateEvent(
+                                                                                    event
+                                                                                )
                                                                             }
                                                                             className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
                                                                         >
-                                                                            <Plus size={14} />
-                                                                            Duplicate event
+                                                                            <Plus
+                                                                                size={
+                                                                                    14
+                                                                                }
+                                                                            />
+                                                                            Duplicate
+                                                                            event
                                                                         </button>
 
-                                                                        {event.status !== 'cancelled' && (
+                                                                        {event.status !==
+                                                                            'cancelled' && (
                                                                             <>
                                                                                 <div className="my-1 border-t border-slate-200 dark:border-slate-700" />
                                                                                 <button
                                                                                     onClick={() =>
-                                                                                        cancelEvent(event.id)
+                                                                                        cancelEvent(
+                                                                                            event.id
+                                                                                        )
                                                                                     }
                                                                                     className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
                                                                                 >
-                                                                                    <Ban size={14} />
-                                                                                    Cancel event
+                                                                                    <Ban
+                                                                                        size={
+                                                                                            14
+                                                                                        }
+                                                                                    />
+                                                                                    Cancel
+                                                                                    event
                                                                                 </button>
                                                                             </>
                                                                         )}
@@ -650,7 +732,11 @@ export default function OrganisersGetAllPage() {
                             className={`mt-5 flex w-full items-center justify-between rounded-lg border px-4 py-3 text-xs font-semibold md:hidden ${panelTheme}`}
                         >
                             <span className="flex items-center gap-2">
-                                {darkMode ? <Sun size={15} /> : <Moon size={15} />}
+                                {darkMode ? (
+                                    <Sun size={15} />
+                                ) : (
+                                    <Moon size={15} />
+                                )}
                                 {darkMode ? 'Light mode' : 'Dark mode'}
                             </span>
                             <span className="text-green-600">
