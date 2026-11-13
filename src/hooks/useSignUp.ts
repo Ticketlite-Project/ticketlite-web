@@ -26,7 +26,10 @@ export function useSignUp() {
         },
         onSuccess: ({ registration, tokens, user }) => {
             login(tokens, user)
-            toast.success(registration.message ?? 'Account created successfully')
+            toast.success(
+                registration.message ?? 'Account created successfully',
+                { duration: 3500 }
+            )
             const destination = signUpState?.from
                 ? `${signUpState.from.pathname}${signUpState.from.search ?? ''}${signUpState.from.hash ?? ''}`
                 : '/'
@@ -35,6 +38,7 @@ export function useSignUp() {
         onError: (error: Error) => {
             toast.error('Sign up failed', {
                 description: error.message ?? 'Please try again.',
+                duration: 3500,
             })
         },
     })

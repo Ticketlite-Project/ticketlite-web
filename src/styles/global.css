@@ -52,6 +52,8 @@
     --color-sidebar-ring: var(--sidebar-ring);
 
     --color-ticket-warning-bg: var(--ticket-warning-bg);
+    --color-ticket-warning-fg: var(--ticket-warning-fg);
+
     --color-image-placeholder: var(--image-placeholder);
     --color-image-placeholder-border: var(--image-placeholder-border);
 }

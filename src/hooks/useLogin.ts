@@ -22,14 +22,17 @@ export function useLogin(returnTo = '/') {
         onSuccess: ({ tokens, userData }) => {
             // 3. Update global state and redirect
             login(tokens, userData)
-            toast.success('Login successful')
-            navigate(returnTo, { replace: true })
+            toast.success('Login successful', { duration: 3500 })
+            navigate(userData.role === 'ADMIN' ? '/admin' : returnTo, {
+                replace: true,
+            })
         },
         onError: (error: Error) => {
             toast.error('Login failed', {
                 description:
                     error.message ??
                     'Please check your connection and try again.',
+                duration: 3500,
             })
         },
     })

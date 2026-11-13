@@ -1,7 +1,8 @@
+import { NavLink, type NavLinkProps } from 'react-router'
 import { cn } from '../../mock/utils'
-import { NavLink, type NavLinkProps } from 'react-router-dom'
 
-const baseClass = 'text-sm font-bold transition-colors text-primary'
+const baseClass =
+    'text-sm font-bold transition-colors text-primary hover:opacity-90 hover:text-primary/80'
 const activeClass = 'border-b-2 border-[#1a6e44] pb-1'
 
 function navLinkClass({ isActive }: { isActive: boolean }) {
