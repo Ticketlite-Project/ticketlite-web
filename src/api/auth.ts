@@ -41,6 +41,7 @@ export async function registerUser(
                 username: data.username,
                 email: data.email,
                 password: data.password,
+                role: data.role,
             }),
             { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
         )

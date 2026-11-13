@@ -51,6 +51,7 @@ export default function SignUp() {
             username: values.email.trim().split('@')[0].toLowerCase(),
             email: values.email.trim().toLowerCase(),
             password: values.password,
+            role: values.accountType,
         })
     }
 
