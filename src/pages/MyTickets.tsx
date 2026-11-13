@@ -1,6 +1,3 @@
-import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { QRCodeSVG } from 'qrcode.react'
 import {
     CalendarDays,
     CheckCircle2,
@@ -9,6 +6,10 @@ import {
     MapPin,
     Ticket,
 } from 'lucide-react'
+import { QRCodeSVG } from 'qrcode.react'
+import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { CustomButton } from '../components/Button/custom-button'
 
 interface TicketData {
     ticketId: string
@@ -42,8 +43,9 @@ function readSavedTickets(): TicketData[] {
 
 function isPastEvent(date: string): boolean {
     const parsedDate = new Date(date)
-    return !Number.isNaN(parsedDate.getTime()) &&
-        parsedDate.getTime() < Date.now()
+    return (
+        !Number.isNaN(parsedDate.getTime()) && parsedDate.getTime() < Date.now()
+    )
 }
 
 export default function MyTickets() {
@@ -52,7 +54,9 @@ export default function MyTickets() {
     // Read local storage once when the page mounts; no effect-driven state update.
     const [tickets] = useState<TicketData[]>(readSavedTickets)
     const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming')
-    const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null)
+    const [selectedTicketId, setSelectedTicketId] = useState<string | null>(
+        null
+    )
 
     const upcomingTickets = useMemo(
         () => tickets.filter((ticket) => !isPastEvent(ticket.eventDate)),
@@ -68,12 +72,13 @@ export default function MyTickets() {
         activeTab === 'upcoming' ? upcomingTickets : pastTickets
 
     const selectedTicket =
-        displayedTickets.find((ticket) => ticket.ticketId === selectedTicketId) ??
+        displayedTickets.find(
+            (ticket) => ticket.ticketId === selectedTicketId
+        ) ??
         displayedTickets[0] ??
         null
 
-    const formatAmount = (amount: number) =>
-        `GHS ${Number(amount).toFixed(2)}`
+    const formatAmount = (amount: number) => `GHS ${Number(amount).toFixed(2)}`
 
     const downloadTicket = () => {
         window.print()
@@ -85,7 +90,7 @@ export default function MyTickets() {
     }
 
     return (
-        <main className="min-h-screen bg-background text-foreground">
+        <section className="min-h-screen bg-background text-foreground">
             {/* The global application Navbar is rendered by the main layout.
                 Do not add another page header or navigation here. */}
 
@@ -104,14 +109,15 @@ export default function MyTickets() {
                         </p>
                     </div>
 
-                    <button
+                    <CustomButton
+                        variant="primary"
                         type="button"
+                        icon={<Ticket className="mr-2 h-4 w-4" />}
                         onClick={() => navigate('/events')}
-                        className="inline-flex w-fit items-center justify-center rounded-lg bg-green-700 px-5 py-3 text-sm font-bold text-white transition hover:bg-green-800"
+                        className="flex w-fit items-center justify-center px-5 py-3 text-sm transition"
                     >
-                        <Ticket className="mr-2 h-4 w-4" />
                         Find events
-                    </button>
+                    </CustomButton>
                 </div>
 
                 {/* Homepage-inspired horizontal sub-navigation */}
@@ -123,14 +129,16 @@ export default function MyTickets() {
                         <button
                             type="button"
                             onClick={() => handleTabChange('upcoming')}
-                            aria-current={activeTab === 'upcoming' ? 'page' : undefined}
-                            className={`shrink-0 border-b-2 py-4 text-sm font-bold transition-colors ${
+                            aria-current={
+                                activeTab === 'upcoming' ? 'page' : undefined
+                            }
+                            className={`shrink-0 border-b-2 py-4 text-sm font-bold transition-colors cursor-pointer ${
                                 activeTab === 'upcoming'
                                     ? 'border-green-700 text-green-900'
-                                    : 'border-transparent text-gray-500 hover:text-gray-900'
+                                    : 'border-transparent text-gray-500'
                             }`}
                         >
-                            Upcoming events
+                            Upcoming events{''}
                             <span className="ml-2 rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800">
                                 {upcomingTickets.length}
                             </span>
@@ -139,14 +147,16 @@ export default function MyTickets() {
                         <button
                             type="button"
                             onClick={() => handleTabChange('past')}
-                            aria-current={activeTab === 'past' ? 'page' : undefined}
-                            className={`shrink-0 border-b-2 py-4 text-sm font-bold transition-colors ${
+                            aria-current={
+                                activeTab === 'past' ? 'page' : undefined
+                            }
+                            className={`shrink-0 border-b-2 py-4 text-sm font-bold transition-colors cursor-pointer ${
                                 activeTab === 'past'
                                     ? 'border-green-700 text-green-900'
-                                    : 'border-transparent text-gray-500 hover:text-gray-900'
+                                    : 'border-transparent text-gray-500 hover:text-green-800'
                             }`}
                         >
-                            Past events
+                            Past events{''}
                             <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
                                 {pastTickets.length}
                             </span>
@@ -167,7 +177,7 @@ export default function MyTickets() {
                         </div>
 
                         {selectedTicket ? (
-                            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-card shadow-sm">
                                 <div className="bg-green-800 px-5 py-5 text-white">
                                     <p className="text-[10px] font-bold uppercase tracking-wider text-green-100">
                                         {selectedTicket.ticketType}
@@ -176,12 +186,13 @@ export default function MyTickets() {
                                         {selectedTicket.eventName}
                                     </h3>
                                     <p className="mt-2 text-xs text-green-100">
-                                        {selectedTicket.eventDate} · {selectedTicket.eventTime}
+                                        {selectedTicket.eventDate} ·{' '}
+                                        {selectedTicket.eventTime}
                                     </p>
                                 </div>
 
                                 <div className="flex flex-col items-center px-5 py-6">
-                                    <div className="rounded-xl border border-gray-100 bg-white p-3">
+                                    <div className="rounded-xl border border-gray-100 bg-card p-3">
                                         <QRCodeSVG
                                             value={`TICKETLITE:${selectedTicket.ticketId}:${selectedTicket.paymentReference}`}
                                             size={190}
@@ -202,7 +213,8 @@ export default function MyTickets() {
                                     >
                                         <span
                                             className={`h-2 w-2 rounded-full ${
-                                                selectedTicket.status === 'valid'
+                                                selectedTicket.status ===
+                                                'valid'
                                                     ? 'bg-green-600'
                                                     : 'bg-gray-500'
                                             }`}
@@ -213,8 +225,8 @@ export default function MyTickets() {
                                     </span>
 
                                     <p className="mt-4 text-center text-xs leading-5 text-gray-500">
-                                        Turn your screen brightness up at the gate.
-                                        Each QR code works once.
+                                        Turn your screen brightness up at the
+                                        gate. Each QR code works once.
                                     </p>
 
                                     <button
@@ -233,18 +245,20 @@ export default function MyTickets() {
                                         Payment information
                                     </div>
                                     <p className="text-xs text-gray-600">
-                                        Amount: {formatAmount(selectedTicket.amount)}
+                                        Amount:{' '}
+                                        {formatAmount(selectedTicket.amount)}
                                     </p>
                                     <p className="text-xs text-gray-600">
                                         Network: {selectedTicket.network}
                                     </p>
                                     <p className="break-all text-xs text-gray-600">
-                                        Reference: {selectedTicket.paymentReference}
+                                        Reference:{' '}
+                                        {selectedTicket.paymentReference}
                                     </p>
                                 </div>
                             </div>
                         ) : (
-                            <div className="flex min-h-48 items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500">
+                            <div className="flex min-h-48 items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-card p-6 text-center text-sm text-gray-500">
                                 Select an event ticket to view its QR code and
                                 payment details.
                             </div>
@@ -267,7 +281,7 @@ export default function MyTickets() {
                         </div>
 
                         {displayedTickets.length === 0 ? (
-                            <div className="flex min-h-[320px] flex-col items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-white px-6 py-12 text-center">
+                            <div className="flex min-h-80 flex-col items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-card px-6 py-12 text-center">
                                 <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-green-50">
                                     <Ticket className="h-8 w-8 text-green-700" />
                                 </div>
@@ -282,30 +296,34 @@ export default function MyTickets() {
                                         : 'When you have attended events, your previous tickets will appear here.'}
                                 </p>
                                 {activeTab === 'upcoming' && (
-                                    <button
+                                    <CustomButton
+                                        variant="primary"
                                         type="button"
-                                        onClick={() => navigate('/events')}
-                                        className="mt-6 rounded-lg bg-green-700 px-6 py-3 text-sm font-bold text-white hover:bg-green-800"
+                                        to={'/events'}
+                                        className="mt-6 px-6 py-3 text-sm transition"
                                     >
                                         Explore events
-                                    </button>
+                                    </CustomButton>
                                 )}
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                                 {displayedTickets.map((ticket) => {
                                     const isSelected =
-                                        selectedTicket?.ticketId === ticket.ticketId
+                                        selectedTicket?.ticketId ===
+                                        ticket.ticketId
 
                                     return (
                                         <button
                                             type="button"
                                             key={ticket.ticketId}
                                             onClick={() =>
-                                                setSelectedTicketId(ticket.ticketId)
+                                                setSelectedTicketId(
+                                                    ticket.ticketId
+                                                )
                                             }
                                             aria-pressed={isSelected}
-                                            className={`group overflow-hidden rounded-xl border bg-white text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+                                            className={`group overflow-hidden rounded-xl border bg-card text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
                                                 isSelected
                                                     ? 'border-green-700 ring-2 ring-green-700/15'
                                                     : 'border-gray-200'
@@ -320,7 +338,7 @@ export default function MyTickets() {
                                                         {ticket.eventName}
                                                     </h3>
                                                 </div>
-                                                <span className="shrink-0 rounded-full bg-white/15 p-2">
+                                                <span className="shrink-0 rounded-full bg-card/15 p-2">
                                                     <Ticket className="h-5 w-5" />
                                                 </span>
                                             </div>
@@ -329,7 +347,8 @@ export default function MyTickets() {
                                                 <p className="flex items-start gap-2 text-sm text-gray-600">
                                                     <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-green-700" />
                                                     <span>
-                                                        {ticket.eventDate} · {ticket.eventTime}
+                                                        {ticket.eventDate} ·{' '}
+                                                        {ticket.eventTime}
                                                     </span>
                                                 </p>
                                                 <p className="flex items-start gap-2 text-sm text-gray-600">
@@ -341,13 +360,15 @@ export default function MyTickets() {
                                                 <div className="flex items-center justify-between border-t border-gray-100 pt-3">
                                                     <span
                                                         className={`inline-flex items-center gap-1.5 text-xs font-bold ${
-                                                            ticket.status === 'valid'
+                                                            ticket.status ===
+                                                            'valid'
                                                                 ? 'text-green-700'
                                                                 : 'text-gray-500'
                                                         }`}
                                                     >
                                                         <CheckCircle2 className="h-4 w-4" />
-                                                        {ticket.status === 'valid'
+                                                        {ticket.status ===
+                                                        'valid'
                                                             ? 'Valid ticket'
                                                             : 'Scanned'}
                                                     </span>
@@ -363,8 +384,6 @@ export default function MyTickets() {
                             </div>
                         )}
                     </section>
-
-
                 </div>
             </section>
 
@@ -392,6 +411,6 @@ export default function MyTickets() {
                     }
                 }
             `}</style>
-        </main>
+        </section>
     )
 }

@@ -1,26 +1,27 @@
-
-import { createBrowserRouter } from 'react-router-dom'
-
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { PublicOnlyRoute } from './components/auth/PublicOnlyRoute'
 import { Page } from './components/Page'
 import { MainLayout } from './layouts/MainLayout'
 
 import {
-    CreateEvent,
+    AdminDashboard,
+    AdminPlatformNumbers,
+    AdminUsers,
     Checkout,
+    CreateEvent,
     EventDetails,
     EventsDashboard,
     Home,
     Login,
+    Logout,
+    MobileMoneyPaymentFlow,
     MyTickets,
     NotFound,
     OrganisersGetAllPage,
     Signup,
-    MobileMoneyPaymentFlow,
 } from './routes/lazyPages'
 
-import OrganizerEventsDashboard from './pages/OrganizerEventsDashboard'
+import { createBrowserRouter } from 'react-router'
 
 export const router = createBrowserRouter([
     {
@@ -43,16 +44,6 @@ export const router = createBrowserRouter([
                 ),
             },
 
-            // My tickets
-            {
-                path: 'my-tickets',
-                element: (
-                    <Page>
-                        <MyTickets />
-                    </Page>
-                ),
-            },
-
             // Events
             {
                 path: 'events',
@@ -69,6 +60,16 @@ export const router = createBrowserRouter([
                 element: (
                     <Page>
                         <EventDetails />
+                    </Page>
+                ),
+            },
+
+            // Logout page
+            {
+                path: 'logout',
+                element: (
+                    <Page>
+                        <Logout />
                     </Page>
                 ),
             },
@@ -100,7 +101,15 @@ export const router = createBrowserRouter([
             {
                 element: <ProtectedRoute />,
                 children: [
-                    // Checkout
+                    // My tickets
+                    {
+                        path: 'my-tickets',
+                        element: (
+                            <Page>
+                                <MyTickets />
+                            </Page>
+                        ),
+                    },
                     {
                         path: 'checkout',
                         element: (
@@ -109,8 +118,6 @@ export const router = createBrowserRouter([
                             </Page>
                         ),
                     },
-
-                    // Mobile Money Payment
                     {
                         path: 'payment/mobile-money',
                         element: (
@@ -119,44 +126,72 @@ export const router = createBrowserRouter([
                             </Page>
                         ),
                     },
-
-                    // Organisers list
                     {
                         path: 'organisers',
                         element: (
-                            <Page>
-                                <OrganisersGetAllPage />
-                            </Page>
+                            <ProtectedRoute allowedRoles={['ORGANIZER']}>
+                                <Page>
+                                    <OrganisersGetAllPage />
+                                </Page>
+                            </ProtectedRoute>
                         ),
                     },
-
-                    // Create event
                     {
                         path: 'organisers/create-event',
                         element: (
-                            <Page>
-                                <CreateEvent />
-                            </Page>
+                            <ProtectedRoute allowedRoles={['ORGANIZER']}>
+                                <Page>
+                                    <CreateEvent />
+                                </Page>
+                            </ProtectedRoute>
                         ),
                     },
-
-                    // New organiser event dashboard
                     {
-                        path: 'organisers/events/:id/dashboard',
+                        path: 'organisers/create-event',
                         element: (
-                            <Page>
-                                <OrganizerEventsDashboard />
-                            </Page>
+                            <ProtectedRoute allowedRoles={['ORGANIZER']}>
+                                <Page>
+                                    <CreateEvent />
+                                </Page>
+                            </ProtectedRoute>
                         ),
                     },
-
-                    // Existing organiser dashboard
                     {
                         path: 'organisers/:id',
                         element: (
                             <Page>
                                 <EventsDashboard />
                             </Page>
+                        ),
+                    },
+                    {
+                        path: 'admin',
+                        element: (
+                            <ProtectedRoute allowedRoles={['ADMIN']}>
+                                <Page>
+                                    <AdminDashboard />
+                                </Page>
+                            </ProtectedRoute>
+                        ),
+                    },
+                    {
+                        path: 'admin/users',
+                        element: (
+                            <ProtectedRoute allowedRoles={['ADMIN']}>
+                                <Page>
+                                    <AdminUsers />
+                                </Page>
+                            </ProtectedRoute>
+                        ),
+                    },
+                    {
+                        path: 'admin/platform-numbers',
+                        element: (
+                            <ProtectedRoute allowedRoles={['ADMIN']}>
+                                <Page>
+                                    <AdminPlatformNumbers />
+                                </Page>
+                            </ProtectedRoute>
                         ),
                     },
                 ],
