@@ -1,4 +1,6 @@
 
+import { createBrowserRouter } from 'react-router-dom'
+
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { PublicOnlyRoute } from './components/auth/PublicOnlyRoute'
 import { Page } from './components/Page'
@@ -18,7 +20,7 @@ import {
     MobileMoneyPaymentFlow,
 } from './routes/lazyPages'
 
-import { createBrowserRouter } from 'react-router-dom'
+import OrganizerEventsDashboard from './pages/OrganizerEventsDashboard'
 
 export const router = createBrowserRouter([
     {
@@ -118,7 +120,7 @@ export const router = createBrowserRouter([
                         ),
                     },
 
-                    // Organisers
+                    // Organisers list
                     {
                         path: 'organisers',
                         element: (
@@ -138,7 +140,17 @@ export const router = createBrowserRouter([
                         ),
                     },
 
-                    // Organiser dashboard
+                    // New organiser event dashboard
+                    {
+                        path: 'organisers/events/:id/dashboard',
+                        element: (
+                            <Page>
+                                <OrganizerEventsDashboard />
+                            </Page>
+                        ),
+                    },
+
+                    // Existing organiser dashboard
                     {
                         path: 'organisers/:id',
                         element: (
