@@ -16,7 +16,7 @@ export const OrganisersGetAllPage = lazy(
     () => import('../pages/OrganisersGetAllPage')
 )
 
-export const EventsDashboard = lazy(() => import('../pages/EventsDashboard'))
+export const EventsDashboard = lazy(() => import('../pages/OrganizerEventsDashboard'))
 
 export const CreateEvent = lazy(() => import('../pages/CreateEvent'))
 

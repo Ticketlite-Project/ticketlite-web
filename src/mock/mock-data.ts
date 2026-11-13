@@ -533,3 +533,20 @@ export const mockEvents: EventData[] = [
         ],
     },
 ]
+
+
+// Automatically identify events whose dates have already passed.
+export const isEventPast = (event: EventData): boolean => {
+    const eventDate = new Date(event.startDate)
+    const today = new Date()
+
+    eventDate.setHours(0, 0, 0, 0)
+    today.setHours(0, 0, 0, 0)
+
+    return eventDate < today
+}
+
+// Only events that have not yet passed.
+export const upcomingEvents = mockEvents.filter(
+    (event) => !isEventPast(event)
+)

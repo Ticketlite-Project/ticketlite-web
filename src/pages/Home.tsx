@@ -1,4 +1,4 @@
-import { mockEvents } from '@/src/mock/mock-data'
+import { mockEvents, upcomingEvents } from '@/src/mock/mock-data'
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { CATEGORIES } from '../components/event-categories'
@@ -39,7 +39,7 @@ export default function Home() {
 
     const sortedEvents = useMemo(() => {
         const searchTerm = query.search.trim().toLowerCase()
-        const filtered = events.filter((event) => {
+        const filtered = upcomingEvents.filter((event) => {
             const matchesCategory =
                 activeCategory === 'all' || event.type === activeCategory
 
