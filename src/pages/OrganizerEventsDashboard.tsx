@@ -1,6 +1,3 @@
-
-import { useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
 import {
     CalendarDays,
     CheckCircle2,
@@ -11,6 +8,8 @@ import {
     Ticket,
     Users,
 } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 
 type OrderStatus = 'Paid' | 'Held' | 'Payment failed'
 
@@ -25,11 +24,41 @@ interface Order {
 const salesData = [12, 8, 15, 22, 18, 9, 30, 42, 26, 19, 35, 49, 53, 17]
 
 const initialOrders: Order[] = [
-    { id: 'TL-48291', buyer: 'Kwame A.', tickets: '2 × Regular', total: 80, status: 'Paid' },
-    { id: 'TL-48290', buyer: 'Esi B.', tickets: '1 × VIP', total: 100, status: 'Paid' },
-    { id: 'TL-48288', buyer: 'Yaw O.', tickets: '3 × Regular', total: 120, status: 'Held' },
-    { id: 'TL-48285', buyer: 'Abena K.', tickets: '1 × Regular', total: 40, status: 'Payment failed' },
-    { id: 'TL-48281', buyer: 'Kojo D.', tickets: '2 × VIP', total: 200, status: 'Paid' },
+    {
+        id: 'TL-48291',
+        buyer: 'Kwame A.',
+        tickets: '2 × Regular',
+        total: 80,
+        status: 'Paid',
+    },
+    {
+        id: 'TL-48290',
+        buyer: 'Esi B.',
+        tickets: '1 × VIP',
+        total: 100,
+        status: 'Paid',
+    },
+    {
+        id: 'TL-48288',
+        buyer: 'Yaw O.',
+        tickets: '3 × Regular',
+        total: 120,
+        status: 'Held',
+    },
+    {
+        id: 'TL-48285',
+        buyer: 'Abena K.',
+        tickets: '1 × Regular',
+        total: 40,
+        status: 'Payment failed',
+    },
+    {
+        id: 'TL-48281',
+        buyer: 'Kojo D.',
+        tickets: '2 × VIP',
+        total: 200,
+        status: 'Paid',
+    },
 ]
 
 const money = (amount: number) =>
@@ -45,9 +74,6 @@ export default function OrganiserEventsDashboard() {
     const { id } = useParams()
 
     const [orders] = useState<Order[]>(initialOrders)
-    const [darkMode, setDarkMode] = useState(
-        () => localStorage.getItem('ticketlite-organiser-dark') === 'true'
-    )
     const [notice, setNotice] = useState('')
 
     // Sample dashboard values. Replace with API data when connected.
@@ -79,14 +105,9 @@ export default function OrganiserEventsDashboard() {
     )
 
     const averageOrder =
-        event.ticketsSold > 0
-            ? event.revenue / event.ticketsSold
-            : 0
+        event.ticketsSold > 0 ? event.revenue / event.ticketsSold : 0
 
-    const totalOrders = useMemo(
-        () => orders.length,
-        [orders]
-    )
+    const totalOrders = useMemo(() => orders.length, [orders])
 
     const showNotice = (message: string) => {
         setNotice(message)
@@ -138,63 +159,52 @@ export default function OrganiserEventsDashboard() {
     //     }
     // }
 
-    const toggleTheme = () => {
-        const next = !darkMode
-        setDarkMode(next)
-        localStorage.setItem('ticketlite-organiser-dark', String(next))
-    }
-
-    const pageClass = darkMode
-        ? 'bg-slate-950 text-slate-100'
-        : 'bg-[#f8faf9] text-slate-900'
-
-    const panelClass = darkMode
-        ? 'border-slate-700 bg-slate-900'
-        : 'border-slate-200 bg-white'
+    const panelClass = 'border-border bg-card text-card-foreground'
 
     return (
-        <div className={`min-h-screen ${pageClass}`}>
+        <div className="min-h-screen bg-background text-foreground">
             <div className="flex min-h-screen flex-col md:flex-row">
-
                 {/* ORGANISER SIDEBAR */}
                 <aside
                     className={`flex w-full shrink-0 flex-col border-r md:sticky md:top-0 md:h-screen md:w-56 ${panelClass}`}
                 >
-                    <div className="flex items-center gap-2 border-b border-inherit px-5 py-6">
-                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-700 text-white">
+                    <div className="flex items-center gap-2 border-b border-border px-5 py-6">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-headerBackground text-white">
                             <Ticket size={17} />
                         </span>
                         <span className="text-lg font-extrabold">
-                            Ticket<span className="text-green-600">Lite</span>
+                            Ticket<span className="text-homeText">Lite</span>
                         </span>
                     </div>
 
                     <div className="px-4 pt-7">
-                        <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                        <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                             Organiser
                         </p>
 
                         <nav className="flex gap-2 overflow-x-auto md:flex-col">
                             <button
                                 onClick={() => navigate('/organisers')}
-                                className="flex shrink-0 items-center gap-3 rounded-lg bg-emerald-50 px-3 py-3 text-left text-xs font-bold text-green-800 dark:bg-emerald-950 dark:text-green-300"
+                                className="flex shrink-0 items-center gap-3 rounded-lg bg-accent px-3 py-3 text-left text-xs font-bold text-accent-foreground"
                             >
                                 <CalendarDays size={16} />
                                 My events
                             </button>
 
                             <button
-    type="button"
-    onClick={() => navigate('/organisers/create-event')}
-    className="flex shrink-0 items-center gap-3 rounded-lg px-3 py-3 text-left text-xs font-medium text-slate-500 transition hover:bg-slate-100 hover:text-green-700 dark:hover:bg-slate-800"
->
-    <Plus size={16} />
-    Create event
-</button>
+                                type="button"
+                                onClick={() =>
+                                    navigate('/organisers/create-event')
+                                }
+                                className="flex shrink-0 items-center gap-3 rounded-lg px-3 py-3 text-left text-xs font-medium text-muted-foreground transition hover:bg-accent hover:text-accent-foreground"
+                            >
+                                <Plus size={16} />
+                                Create event
+                            </button>
 
                             <button
                                 onClick={() => navigate('/gate-check-in')}
-                                className="flex shrink-0 items-center gap-3 rounded-lg px-3 py-3 text-left text-xs font-medium text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                className="flex shrink-0 items-center gap-3 rounded-lg px-3 py-3 text-left text-xs font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                             >
                                 <ScanLine size={16} />
                                 Gate check-in
@@ -202,40 +212,24 @@ export default function OrganiserEventsDashboard() {
 
                             <button
                                 onClick={() => navigate('/gate-staff')}
-                                className="flex shrink-0 items-center gap-3 rounded-lg px-3 py-3 text-left text-xs font-medium text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                className="flex shrink-0 items-center gap-3 rounded-lg px-3 py-3 text-left text-xs font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                             >
                                 <Users size={16} />
                                 Gate staff
                             </button>
                         </nav>
                     </div>
-
-                    <div className="mt-auto hidden p-4 md:block">
-                        <button
-                            onClick={toggleTheme}
-                            className={`flex w-full items-center justify-between rounded-lg border px-3 py-3 text-xs font-semibold ${panelClass}`}
-                        >
-                            <span className="flex items-center gap-2">
-                                {darkMode ? '☀️' : '☾'}
-                                {darkMode ? 'Light mode' : 'Dark mode'}
-                            </span>
-                            <span className="text-green-600">
-                                {darkMode ? 'ON' : 'OFF'}
-                            </span>
-                        </button>
-                    </div>
                 </aside>
 
                 {/* DASHBOARD CONTENT */}
                 <main className="min-w-0 flex-1">
                     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-
                         {/* BREADCRUMB AND EVENT HEADER */}
                         <div className="mb-5">
-                            <div className="mb-3 flex items-center gap-2 text-[10px] text-slate-500">
+                            <div className="mb-3 flex items-center gap-2 text-[10px] text-muted-foreground">
                                 <button
                                     onClick={() => navigate('/organisers')}
-                                    className="hover:text-green-700"
+                                    className="hover:text-foreground"
                                 >
                                     My events
                                 </button>
@@ -249,34 +243,41 @@ export default function OrganiserEventsDashboard() {
                                         <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
                                             {event.name}
                                         </h1>
-                                        <span className="rounded bg-emerald-50 px-2 py-1 text-[9px] font-extrabold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                                        <span className="rounded bg-ticket-warning-bg px-2 py-1 text-[9px] font-extrabold text-ticket-warning-fg">
                                             {event.status}
                                         </span>
                                     </div>
 
-                                    <p className="mt-2 text-xs text-slate-400">
-                                        {event.date} · {event.time} · {event.venue}
+                                    <p className="mt-2 text-xs text-muted-foreground">
+                                        {event.date} · {event.time} ·{' '}
+                                        {event.venue}
                                     </p>
                                 </div>
 
                                 <div className="flex flex-wrap items-center gap-2">
-                                    <span className="mr-1 text-[10px] text-slate-400">
-                                        <span className="mr-1 text-green-600">●</span>
+                                    <span className="mr-1 text-[10px] text-muted-foreground">
+                                        <span className="mr-1 text-homeText">
+                                            ●
+                                        </span>
                                         Updated 2 min ago
                                     </span>
 
                                     <button
                                         onClick={() =>
-                                            navigate(`/organisers/events/${event.id}/edit`)
+                                            navigate(
+                                                `/organisers/events/${event.id}/edit`
+                                            )
                                         }
-                                        className={`rounded-md border px-3 py-2 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 ${panelClass}`}
+                                        className={`rounded-md border px-3 py-2 text-xs font-bold hover:bg-accent ${panelClass}`}
                                     >
                                         Edit event
                                     </button>
 
                                     <button
-                                        onClick={() => navigate('/gate-check-in')}
-                                        className="inline-flex items-center gap-2 rounded-md bg-green-700 px-3 py-2 text-xs font-bold text-white hover:bg-green-800"
+                                        onClick={() =>
+                                            navigate('/gate-check-in')
+                                        }
+                                        className="inline-flex items-center gap-2 rounded-md bg-headerBackground px-3 py-2 text-xs font-bold text-white hover:opacity-90"
                                     >
                                         <ScanLine size={14} />
                                         OPEN SCANNER
@@ -287,77 +288,85 @@ export default function OrganiserEventsDashboard() {
 
                         {/* STATISTIC CARDS */}
                         <section className="mb-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
-                            <div className="rounded-lg border border-green-800 bg-green-800 p-4 text-white">
-                                <p className="text-[10px] font-semibold text-green-100">
+                            <div className="rounded-lg border border-headerBackground bg-headerBackground p-4 text-white">
+                                <p className="text-[10px] font-semibold text-white/80">
                                     Tickets sold
                                 </p>
                                 <p className="mt-1 text-2xl font-extrabold">
                                     {event.ticketsSold}
-                                    <span className="ml-1 text-sm font-semibold text-green-100">
+                                    <span className="ml-1 text-sm font-semibold text-white/80">
                                         / {event.capacity}
                                     </span>
                                 </p>
-                                <p className="mt-1 text-[9px] font-bold text-green-100">
+                                <p className="mt-1 text-[9px] font-bold text-white/80">
                                     {soldPercentage}% sell-through
                                 </p>
                             </div>
 
-                            <div className={`rounded-lg border p-4 ${panelClass}`}>
-                                <p className="text-[10px] font-medium text-slate-500">
+                            <div
+                                className={`rounded-lg border p-4 ${panelClass}`}
+                            >
+                                <p className="text-[10px] font-medium text-muted-foreground">
                                     Gross revenue
                                 </p>
                                 <p className="mt-1 text-xl font-extrabold sm:text-2xl">
                                     {formatMoney(event.revenue)}
                                 </p>
-                                <p className="mt-1 text-[9px] text-slate-400">
+                                <p className="mt-1 text-[9px] text-muted-foreground">
                                     Avg order {money(averageOrder)}
                                 </p>
                             </div>
 
-                            <div className={`rounded-lg border p-4 ${panelClass}`}>
-                                <p className="text-[10px] font-medium text-slate-500">
+                            <div
+                                className={`rounded-lg border p-4 ${panelClass}`}
+                            >
+                                <p className="text-[10px] font-medium text-muted-foreground">
                                     Checked in
                                 </p>
                                 <p className="mt-1 text-xl font-extrabold sm:text-2xl">
                                     {event.checkedIn}
-                                    <span className="ml-1 text-sm font-medium text-slate-400">
+                                    <span className="ml-1 text-sm font-medium text-muted-foreground">
                                         / {event.ticketsSold}
                                     </span>
                                 </p>
-                                <p className="mt-1 text-[9px] text-slate-400">
+                                <p className="mt-1 text-[9px] text-muted-foreground">
                                     {checkedPercentage}% attendance so far
                                 </p>
                             </div>
 
-                            <div className={`rounded-lg border p-4 ${panelClass}`}>
-                                <p className="text-[10px] font-medium text-slate-500">
+                            <div
+                                className={`rounded-lg border p-4 ${panelClass}`}
+                            >
+                                <p className="text-[10px] font-medium text-muted-foreground">
                                     Tickets left
                                 </p>
                                 <p className="mt-1 text-xl font-extrabold sm:text-2xl">
                                     {event.capacity - event.ticketsSold}
                                 </p>
-                                <p className="mt-1 text-[9px] text-slate-400">
-                                    VIP: {event.vipCapacity - event.vipSold} left
+                                <p className="mt-1 text-[9px] text-muted-foreground">
+                                    VIP: {event.vipCapacity - event.vipSold}{' '}
+                                    left
                                 </p>
                             </div>
                         </section>
 
                         {/* CHART AND TICKET TYPE BREAKDOWN */}
                         <section className="mb-5 grid grid-cols-1 gap-4 xl:grid-cols-5">
-
                             {/* SALES CHART */}
-                            <div className={`rounded-lg border p-4 xl:col-span-3 ${panelClass}`}>
+                            <div
+                                className={`rounded-lg border p-4 xl:col-span-3 ${panelClass}`}
+                            >
                                 <div className="mb-4 flex items-start justify-between">
                                     <div>
                                         <h2 className="text-sm font-extrabold">
                                             Tickets sold per day
                                         </h2>
-                                        <p className="mt-1 text-[10px] text-slate-400">
+                                        <p className="mt-1 text-[10px] text-muted-foreground">
                                             Last 14 days
                                         </p>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-[9px] text-slate-400">
+                                        <p className="text-[9px] text-muted-foreground">
                                             13 Nov
                                         </p>
                                         <p className="text-sm font-extrabold">
@@ -373,10 +382,10 @@ export default function OrganiserEventsDashboard() {
                                                 key={number}
                                                 className="flex items-center gap-2"
                                             >
-                                                <span className="w-4 text-right text-[9px] text-slate-400">
+                                                <span className="w-4 text-right text-[9px] text-muted-foreground">
                                                     {number}
                                                 </span>
-                                                <div className="h-px flex-1 border-t border-dashed border-slate-200 dark:border-slate-700" />
+                                                <div className="h-px flex-1 border-t border-dashed border-border" />
                                             </div>
                                         ))}
                                     </div>
@@ -389,10 +398,10 @@ export default function OrganiserEventsDashboard() {
                                             >
                                                 <div
                                                     title={`${value} tickets`}
-                                                    className={`w-full rounded-t-sm transition hover:bg-green-500 ${
+                                                    className={`w-full rounded-t-sm transition hover:opacity-80 ${
                                                         index === 12
-                                                            ? 'bg-green-900'
-                                                            : 'bg-emerald-700'
+                                                            ? 'bg-homeText'
+                                                            : 'bg-headerBackground'
                                                     }`}
                                                     style={{
                                                         height: `${(value / 60) * 100}%`,
@@ -400,10 +409,15 @@ export default function OrganiserEventsDashboard() {
                                                 />
                                             </div>
                                         ))}
-                                        <div className="absolute bottom-0 left-0 right-0 ml-0 flex justify-between pl-0 text-[9px] text-slate-400">
+                                        <div className="absolute bottom-0 left-0 right-0 ml-0 flex justify-between pl-0 text-[9px] text-muted-foreground">
                                             {salesData.map((_, index) => (
-                                                <span key={index} className="flex-1 text-center">
-                                                    {index % 2 === 0 ? index + 1 : ''}
+                                                <span
+                                                    key={index}
+                                                    className="flex-1 text-center"
+                                                >
+                                                    {index % 2 === 0
+                                                        ? index + 1
+                                                        : ''}
                                                 </span>
                                             ))}
                                         </div>
@@ -412,7 +426,9 @@ export default function OrganiserEventsDashboard() {
                             </div>
 
                             {/* SALES BY TICKET TYPE */}
-                            <div className={`rounded-lg border p-4 xl:col-span-2 ${panelClass}`}>
+                            <div
+                                className={`rounded-lg border p-4 xl:col-span-2 ${panelClass}`}
+                            >
                                 <h2 className="mb-4 text-sm font-extrabold">
                                     Sales by ticket type
                                 </h2>
@@ -423,24 +439,29 @@ export default function OrganiserEventsDashboard() {
                                             Regular · GHS 40
                                         </p>
                                         <p className="text-[10px] font-semibold">
-                                            {event.regularSold} / {event.regularCapacity}
+                                            {event.regularSold} /{' '}
+                                            {event.regularCapacity}
                                         </p>
                                     </div>
 
-                                    <div className="h-1.5 overflow-hidden rounded-full bg-emerald-100 dark:bg-slate-700">
+                                    <div className="h-1.5 overflow-hidden rounded-full bg-muted">
                                         <div
-                                            className="h-full rounded-full bg-emerald-700"
+                                            className="h-full rounded-full bg-headerBackground"
                                             style={{
                                                 width: `${(event.regularSold / event.regularCapacity) * 100}%`,
                                             }}
                                         />
                                     </div>
 
-                                    <p className="mt-2 text-[9px] text-slate-400">
-                                        {formatMoney(event.regularRevenue)} revenue ·{' '}
+                                    <p className="mt-2 text-[9px] text-muted-foreground">
+                                        {formatMoney(event.regularRevenue)}{' '}
+                                        revenue ·{' '}
                                         {Math.round(
-                                            (event.regularSold / event.regularCapacity) * 100
-                                        )}% sold
+                                            (event.regularSold /
+                                                event.regularCapacity) *
+                                                100
+                                        )}
+                                        % sold
                                     </p>
                                 </div>
 
@@ -450,36 +471,43 @@ export default function OrganiserEventsDashboard() {
                                             VIP · GHS 100
                                         </p>
                                         <p className="text-[10px] font-semibold">
-                                            {event.vipSold} / {event.vipCapacity}
+                                            {event.vipSold} /{' '}
+                                            {event.vipCapacity}
                                         </p>
                                     </div>
 
-                                    <div className="h-1.5 overflow-hidden rounded-full bg-emerald-100 dark:bg-slate-700">
+                                    <div className="h-1.5 overflow-hidden rounded-full bg-muted">
                                         <div
-                                            className="h-full rounded-full bg-emerald-700"
+                                            className="h-full rounded-full bg-headerBackground"
                                             style={{
                                                 width: `${(event.vipSold / event.vipCapacity) * 100}%`,
                                             }}
                                         />
                                     </div>
 
-                                    <p className="mt-2 text-[9px] text-slate-400">
-                                        {formatMoney(event.vipRevenue)} revenue ·{' '}
+                                    <p className="mt-2 text-[9px] text-muted-foreground">
+                                        {formatMoney(event.vipRevenue)} revenue
+                                        ·{' '}
                                         {Math.round(
-                                            (event.vipSold / event.vipCapacity) * 100
-                                        )}% sold
+                                            (event.vipSold /
+                                                event.vipCapacity) *
+                                                100
+                                        )}
+                                        % sold
                                     </p>
                                 </div>
 
-                                <div className="rounded-md bg-lime-100 p-3 text-[10px] leading-relaxed text-green-950 dark:bg-lime-950 dark:text-lime-200">
-                                    VIP is close to selling out. You can add more
-                                    VIP tickets from Edit event.
+                                <div className="rounded-md bg-ticket-warning-bg p-3 text-[10px] leading-relaxed text-ticket-warning-fg">
+                                    VIP is close to selling out. You can add
+                                    more VIP tickets from Edit event.
                                 </div>
                             </div>
                         </section>
 
                         {/* RECENT ORDERS */}
-                        <section className={`overflow-hidden rounded-lg border ${panelClass}`}>
+                        <section
+                            className={`overflow-hidden rounded-lg border ${panelClass}`}
+                        >
                             <div className="flex items-center justify-between border-b border-inherit px-4 py-4">
                                 <h2 className="text-sm font-extrabold">
                                     Recent orders
@@ -487,7 +515,7 @@ export default function OrganiserEventsDashboard() {
 
                                 <button
                                     onClick={exportOrders}
-                                    className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 underline underline-offset-2 dark:text-emerald-400"
+                                    className="inline-flex items-center gap-1 text-[10px] font-bold text-homeText underline underline-offset-2"
                                 >
                                     <Download size={12} />
                                     Export CSV
@@ -497,12 +525,16 @@ export default function OrganiserEventsDashboard() {
                             <div className="overflow-x-auto">
                                 <table className="w-full min-w-[650px] text-left">
                                     <thead>
-                                        <tr className="bg-slate-50 text-[9px] font-bold uppercase text-slate-500 dark:bg-slate-800">
+                                        <tr className="bg-muted text-[9px] font-bold uppercase text-muted-foreground">
                                             <th className="px-4 py-3">Order</th>
                                             <th className="px-4 py-3">Buyer</th>
-                                            <th className="px-4 py-3">Tickets</th>
+                                            <th className="px-4 py-3">
+                                                Tickets
+                                            </th>
                                             <th className="px-4 py-3">Total</th>
-                                            <th className="px-4 py-3">Status</th>
+                                            <th className="px-4 py-3">
+                                                Status
+                                            </th>
                                         </tr>
                                     </thead>
 
@@ -515,10 +547,10 @@ export default function OrganiserEventsDashboard() {
                                                 <td className="px-4 py-3 font-semibold">
                                                     {order.id}
                                                 </td>
-                                                <td className="px-4 py-3 text-slate-500">
+                                                <td className="px-4 py-3 text-muted-foreground">
                                                     {order.buyer}
                                                 </td>
-                                                <td className="px-4 py-3 text-slate-500">
+                                                <td className="px-4 py-3 text-muted-foreground">
                                                     {order.tickets}
                                                 </td>
                                                 <td className="px-4 py-3 font-medium">
@@ -526,15 +558,16 @@ export default function OrganiserEventsDashboard() {
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     {order.status === 'Paid' ? (
-                                                        <span className="inline-flex items-center gap-1 font-bold text-emerald-700 dark:text-emerald-400">
+                                                        <span className="inline-flex items-center gap-1 font-bold text-homeText">
                                                             <span>●</span> Paid
                                                         </span>
-                                                    ) : order.status === 'Held' ? (
-                                                        <span className="font-semibold text-slate-500">
+                                                    ) : order.status ===
+                                                      'Held' ? (
+                                                        <span className="font-semibold text-muted-foreground">
                                                             ● Held · 6 min left
                                                         </span>
                                                     ) : (
-                                                        <span className="font-bold text-red-600">
+                                                        <span className="font-bold text-destructive">
                                                             ● Payment failed
                                                         </span>
                                                     )}
@@ -545,27 +578,18 @@ export default function OrganiserEventsDashboard() {
                                 </table>
                             </div>
 
-                            <div className="border-t border-inherit px-4 py-3 text-[10px] text-slate-400">
+                            <div className="border-t border-border px-4 py-3 text-[10px] text-muted-foreground">
                                 Showing {totalOrders} recent orders
                             </div>
                         </section>
-
-                        {/* MOBILE THEME SWITCH */}
-                        <button
-                            onClick={toggleTheme}
-                            className={`mt-5 flex w-full items-center justify-between rounded-lg border px-4 py-3 text-xs font-semibold md:hidden ${panelClass}`}
-                        >
-                            {darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-                            <span>{darkMode ? 'ON' : 'OFF'}</span>
-                        </button>
                     </div>
                 </main>
             </div>
 
             {/* NOTIFICATION */}
             {notice && (
-                <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-3 text-xs font-semibold text-white shadow-xl">
-                    <CheckCircle2 size={16} className="text-green-400" />
+                <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-lg bg-foreground px-4 py-3 text-xs font-semibold text-background shadow-xl">
+                    <CheckCircle2 size={16} className="text-homeText" />
                     {notice}
                 </div>
             )}
