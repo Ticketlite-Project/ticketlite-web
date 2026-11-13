@@ -147,16 +147,6 @@ export const router = createBrowserRouter([
                         ),
                     },
                     {
-                        path: 'organisers/create-event',
-                        element: (
-                            <ProtectedRoute allowedRoles={['ORGANIZER']}>
-                                <Page>
-                                    <CreateEvent />
-                                </Page>
-                            </ProtectedRoute>
-                        ),
-                    },
-                    {
                         path: 'organisers/:id',
                         element: (
                             <Page>
