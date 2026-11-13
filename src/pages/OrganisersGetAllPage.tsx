@@ -309,7 +309,6 @@ export default function OrganisersGetAllPage() {
                                 }
                                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-green-700 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-green-800"
                             >
-                                <Plus size={17} />
                                 CREATE EVENT
                             </CustomButton>
                         </header>
@@ -396,7 +395,7 @@ export default function OrganisersGetAllPage() {
 
                             {/* TABLE */}
                             <div className="overflow-x-auto">
-                                <table className="w-full min-w-[760px] text-left">
+                                <table className="w-full min-w-190 text-left">
                                     <thead>
                                         <tr className="border-b border-border text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
                                             <th className="px-5 py-4">Event</th>
@@ -525,7 +524,7 @@ export default function OrganisersGetAllPage() {
                                                                         }
                                                                         className="rounded-md bg-headerBackground px-3 py-2 text-[10px] font-bold text-white hover:opacity-90"
                                                                     >
-                                                                        DASHBOARD
+                                                                        Dashboard
                                                                     </button>
                                                                 </>
                                                             )}

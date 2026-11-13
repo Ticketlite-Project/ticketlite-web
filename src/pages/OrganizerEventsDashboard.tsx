@@ -9,7 +9,8 @@ import {
     Users,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router'
+import { CustomAlert } from '../components/Alert/custom-alert'
 
 type OrderStatus = 'Paid' | 'Held' | 'Payment failed'
 
@@ -259,6 +260,7 @@ export default function OrganiserEventsDashboard() {
                                         <span className="mr-1 text-homeText">
                                             ●
                                         </span>
+                                        {''}
                                         Updated 2 min ago
                                     </span>
 
@@ -497,10 +499,12 @@ export default function OrganiserEventsDashboard() {
                                     </p>
                                 </div>
 
-                                <div className="rounded-md bg-ticket-warning-bg p-3 text-[10px] leading-relaxed text-ticket-warning-fg">
-                                    VIP is close to selling out. You can add
-                                    more VIP tickets from Edit event.
-                                </div>
+                                <CustomAlert
+                                    type="primary"
+                                    description=" VIP is close to selling out. You can add
+                                    more VIP tickets from Edit event."
+                                    className="rounded-md bg-ticket-warning-bg p-3 text-[10px] leading-relaxed text-ticket-warning-fg"
+                                />
                             </div>
                         </section>
 
@@ -523,7 +527,7 @@ export default function OrganiserEventsDashboard() {
                             </div>
 
                             <div className="overflow-x-auto">
-                                <table className="w-full min-w-[650px] text-left">
+                                <table className="w-full min-w-162.5 text-left">
                                     <thead>
                                         <tr className="bg-muted text-[9px] font-bold uppercase text-muted-foreground">
                                             <th className="px-4 py-3">Order</th>
