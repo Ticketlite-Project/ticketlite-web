@@ -8,12 +8,15 @@ export type AuthTokens = {
     refresh: string
 }
 
+export type UserRole = 'ATTENDEE' | 'ORGANIZER' | 'GATE_STAFF' | 'ADMIN'
+
 export type User = {
     id?: number
     first_name: string
     last_name: string
     username: string
     email: string
+    role: UserRole
 }
 
 export type RegisterData = {

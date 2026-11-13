@@ -1,10 +1,6 @@
-
 import { CustomInput } from '@/src/components/forms'
 import { useSignUp } from '@/src/hooks/useSignUp'
-import {
-    signUpSchema,
-    type SignUpFormValues,
-} from '@/src/lib/validation/auth'
+import { signUpSchema, type SignUpFormValues } from '@/src/lib/validation/auth'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Info } from 'lucide-react'
 import { useForm, useWatch } from 'react-hook-form'
@@ -63,11 +59,9 @@ export default function SignUp() {
 
     return (
         <main className="min-h-screen w-full bg-background px-4 py-8 sm:px-6 sm:py-12">
-            <div className="mx-auto w-full max-w-xl">
-
+            <div className="mx-auto w-full max-w-md">
                 {/* Sign-up card */}
                 <div className="overflow-hidden rounded-xl border border-gray-200 bg-background shadow-sm">
-
                     {/* Page tabs */}
                     <div className="grid grid-cols-2 border-b border-gray-200">
                         <div className="border-b-[3px] border-[#00865a] py-4 text-center font-semibold text-[#00865a]">
@@ -182,18 +176,14 @@ export default function SignUp() {
                             </div>
 
                             {accountType === 'organizer' && (
-                                <CustomAlert className="flex items-start gap-2 rounded-lg bg-lime-200 p-3 text-sm text-gray-900">
-                                    <Info
-                                        size={16}
-                                        className="mt-0.5 shrink-0 text-emerald-700"
-                                    />
-
-                                    <p className="text-xs leading-relaxed">
-                                        Organizer accounts are reviewed by our
+                                <CustomAlert
+                                    icon={<Info />}
+                                    largeIcon
+                                    description=" Organizer accounts are reviewed by our
                                         team. You can create draft events right
-                                        away and publish once approved.
-                                    </p>
-                                </CustomAlert>
+                                        away and publish once approved."
+                                    className="flex items-start gap-2 "
+                                />
                             )}
 
                             <CustomButton

@@ -1,5 +1,3 @@
-
-import { AuthProvider } from './context/AuthProvider'
 import {
     MutationCache,
     QueryCache,
@@ -9,6 +7,7 @@ import {
 import { RouterProvider } from 'react-router-dom'
 import { toast } from 'sonner'
 import './App.css'
+import { AuthProvider } from './context/AuthProvider'
 import { router } from './router'
 
 const queryClient = new QueryClient({
@@ -26,6 +25,7 @@ const queryClient = new QueryClient({
             toast.error('Action Failed', {
                 description:
                     error.message || 'Something went wrong. Please try again.',
+                duration: 3500,
             })
         },
     }),
