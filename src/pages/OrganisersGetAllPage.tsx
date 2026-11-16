@@ -1,6 +1,5 @@
-import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import {
+    Ban,
     CalendarDays,
     Check,
     Copy,
@@ -13,8 +12,9 @@ import {
     Ticket,
     Users,
     X,
-    Ban,
 } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router'
 import { CustomButton } from '../components/Button/custom-button'
 
 type EventStatus = 'published' | 'draft' | 'ended' | 'cancelled'
@@ -203,13 +203,13 @@ export default function OrganisersGetAllPage() {
     const statusStyle = (status: EventStatus) => {
         switch (status) {
             case 'published':
-                return 'bg-emerald-50 text-emerald-700'
+                return 'bg-accent text-homeText'
             case 'draft':
-                return 'bg-slate-100 text-slate-600'
+                return 'bg-muted text-muted-foreground'
             case 'ended':
-                return 'bg-slate-100 text-slate-600'
+                return 'bg-muted text-muted-foreground'
             case 'cancelled':
-                return 'bg-red-50 text-red-600'
+                return 'bg-destructive/10 text-destructive'
         }
     }
 
@@ -226,16 +226,10 @@ export default function OrganisersGetAllPage() {
         }
     }
 
-    const pageTheme = darkMode
-        ? 'bg-slate-950 text-slate-100'
-        : 'bg-[#f8faf9] text-slate-900'
-
-    const panelTheme = darkMode
-        ? 'bg-slate-900 border-slate-700'
-        : 'bg-white border-slate-200'
+    const panelTheme = 'border-border bg-card text-card-foreground'
 
     return (
-        <div className={`min-h-screen ${pageTheme}`}>
+        <div className="min-h-screen bg-background text-foreground">
             <div className="flex min-h-screen flex-col md:flex-row">
                 {/* SIDEBAR */}
                 <aside
@@ -324,7 +318,7 @@ export default function OrganisersGetAllPage() {
                         {/* HEADER */}
                         <header className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                             <div>
-                                <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                                <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                                     KNUST MUSIC SOCIETY
                                 </p>
                                 <h1 className="text-3xl font-extrabold tracking-tight">
@@ -344,8 +338,10 @@ export default function OrganisersGetAllPage() {
 
                         {/* SUMMARY CARDS */}
                         <section className="mb-7 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                            <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-5 dark:border-emerald-900 dark:bg-emerald-950/40">
-                                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                            <div
+                                className={`rounded-xl border p-5 ${panelTheme}`}
+                            >
+                                <p className="text-xs font-medium text-muted-foreground">
                                     Upcoming events
                                 </p>
                                 <p className="mt-1 text-2xl font-extrabold">
@@ -381,7 +377,7 @@ export default function OrganisersGetAllPage() {
                             className={`overflow-visible rounded-xl border ${panelTheme}`}
                         >
                             {/* FILTERS AND SEARCH */}
-                            <div className="flex flex-col gap-4 border-b border-inherit px-4 pt-4 sm:px-5">
+                            <div className="flex flex-col gap-4 border-b border-border px-4 pt-4 sm:px-5">
                                 <div className="flex flex-wrap items-center justify-between gap-3">
                                     <div className="flex gap-5 overflow-x-auto">
                                         {filters.map((filter) => (
@@ -392,8 +388,8 @@ export default function OrganisersGetAllPage() {
                                                 }
                                                 className={`shrink-0 border-b-2 pb-3 text-xs transition ${
                                                     activeFilter === filter
-                                                        ? 'border-green-700 font-extrabold text-green-800 dark:text-green-400'
-                                                        : 'border-transparent font-medium text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                                                        ? 'border-headerBackground font-extrabold text-homeText'
+                                                        : 'border-transparent font-medium text-muted-foreground hover:text-foreground'
                                                 }`}
                                             >
                                                 {filter} ({counts[filter]})
@@ -404,7 +400,7 @@ export default function OrganisersGetAllPage() {
                                     <div className="relative mb-3">
                                         <Search
                                             size={15}
-                                            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                                            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                                         />
                                         <input
                                             value={searchTerm}
@@ -414,11 +410,7 @@ export default function OrganisersGetAllPage() {
                                                 )
                                             }
                                             placeholder="Search events"
-                                            className={`w-full rounded-lg border py-2 pl-9 pr-3 text-xs outline-none focus:border-green-600 sm:w-44 ${
-                                                darkMode
-                                                    ? 'border-slate-700 bg-slate-800'
-                                                    : 'border-slate-200 bg-white'
-                                            }`}
+                                            className="w-full rounded-lg border border-input bg-background py-2 pl-9 pr-3 text-xs text-foreground outline-none placeholder:text-muted-foreground focus:border-ring sm:w-44"
                                         />
                                     </div>
                                 </div>
@@ -426,9 +418,9 @@ export default function OrganisersGetAllPage() {
 
                             {/* TABLE */}
                             <div className="overflow-x-auto">
-                                <table className="w-full min-w-[760px] text-left">
+                                <table className="w-full min-w-190 text-left">
                                     <thead>
-                                        <tr className="border-b border-inherit text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                                        <tr className="border-b border-border text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
                                             <th className="px-5 py-4">Event</th>
                                             <th className="px-4 py-4">
                                                 Status
@@ -458,11 +450,11 @@ export default function OrganisersGetAllPage() {
                                             return (
                                                 <tr
                                                     key={event.id}
-                                                    className="border-b border-inherit last:border-0 transition hover:bg-slate-50/70 dark:hover:bg-slate-800/40"
+                                                    className="border-b border-border last:border-0 transition hover:bg-muted/50"
                                                 >
                                                     <td className="px-5 py-4">
                                                         <div className="flex items-center gap-3">
-                                                            <div className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-md bg-emerald-50 text-green-800 dark:bg-emerald-950 dark:text-green-300">
+                                                            <div className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-md bg-accent text-accent-foreground">
                                                                 <span className="text-[8px] font-bold uppercase">
                                                                     {
                                                                         event.date.split(
@@ -485,7 +477,7 @@ export default function OrganisersGetAllPage() {
                                                                         event.title
                                                                     }
                                                                 </p>
-                                                                <p className="mt-1 text-[10px] text-slate-400">
+                                                                <p className="mt-1 text-[10px] text-muted-foreground">
                                                                     {event.time}
                                                                 </p>
                                                                 <p className="text-[10px] text-slate-400">
@@ -513,9 +505,9 @@ export default function OrganisersGetAllPage() {
                                                                 {event.sold} /{' '}
                                                                 {event.capacity}
                                                             </p>
-                                                            <div className="h-1 w-full overflow-hidden rounded-full bg-emerald-100 dark:bg-slate-700">
+                                                            <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
                                                                 <div
-                                                                    className="h-full rounded-full bg-emerald-700"
+                                                                    className="h-full rounded-full bg-headerBackground"
                                                                     style={{
                                                                         width: `${percentage}%`,
                                                                     }}
@@ -543,7 +535,7 @@ export default function OrganisersGetAllPage() {
                                                                                 `/organisers/events/${event.id}/edit`
                                                                             )
                                                                         }
-                                                                        className="rounded-md border border-slate-200 px-3 py-2 text-[10px] font-bold text-green-700 hover:bg-green-50 dark:border-slate-700"
+                                                                        className="rounded-md border border-border px-3 py-2 text-[10px] font-bold text-homeText hover:bg-accent"
                                                                     >
                                                                         Edit
                                                                     </CustomButton>
@@ -553,7 +545,7 @@ export default function OrganisersGetAllPage() {
                                                                                 `/organisers/events/${event.id}/dashboard`
                                                                             )
                                                                         }
-                                                                        className="rounded-md bg-green-700 px-3 py-2 text-[10px] font-bold text-white hover:bg-green-800"
+                                                                        className="rounded-md bg-headerBackground px-3 py-2 text-[10px] font-bold text-white hover:opacity-90"
                                                                     >
                                                                         DASHBOARD
                                                                     </CustomButton>
@@ -568,7 +560,7 @@ export default function OrganisersGetAllPage() {
                                                                             `/organisers/events/${event.id}/edit`
                                                                         )
                                                                     }
-                                                                    className="rounded-md border border-slate-200 px-3 py-2 text-[10px] font-bold text-green-700 dark:border-slate-700"
+                                                                    className="rounded-md border border-border px-3 py-2 text-[10px] font-bold text-homeText hover:bg-accent"
                                                                 >
                                                                     Edit draft
                                                                 </CustomButton>
@@ -582,7 +574,7 @@ export default function OrganisersGetAllPage() {
                                                                             `/organisers/events/${event.id}/dashboard`
                                                                         )
                                                                     }
-                                                                    className="rounded-md border border-slate-200 px-3 py-2 text-[10px] font-bold text-green-700 dark:border-slate-700"
+                                                                    className="rounded-md border border-border px-3 py-2 text-[10px] font-bold text-homeText hover:bg-accent"
                                                                 >
                                                                     Dashboard
                                                                 </CustomButton>
@@ -596,7 +588,7 @@ export default function OrganisersGetAllPage() {
                                                                             `/events/${event.id}`
                                                                         )
                                                                     }
-                                                                    className="rounded-md border border-slate-200 px-3 py-2 text-[10px] font-bold text-green-700 dark:border-slate-700"
+                                                                    className="rounded-md border border-border px-3 py-2 text-[10px] font-bold text-homeText hover:bg-accent"
                                                                 >
                                                                     View
                                                                 </CustomButton>
@@ -613,7 +605,7 @@ export default function OrganisersGetAllPage() {
                                                                                 : event.id
                                                                         )
                                                                     }
-                                                                    className="rounded-md p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                                                    className="rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                                                                 >
                                                                     <EllipsisVertical
                                                                         size={
@@ -636,7 +628,7 @@ export default function OrganisersGetAllPage() {
                                                                                     null
                                                                                 )
                                                                             }}
-                                                                            className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
+                                                                            className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-xs hover:bg-accent hover:text-accent-foreground"
                                                                         >
                                                                             <Eye
                                                                                 size={
@@ -654,7 +646,7 @@ export default function OrganisersGetAllPage() {
                                                                                     event.id
                                                                                 )
                                                                             }
-                                                                            className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
+                                                                            className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-xs hover:bg-accent hover:text-accent-foreground"
                                                                         >
                                                                             <Copy
                                                                                 size={
@@ -672,7 +664,7 @@ export default function OrganisersGetAllPage() {
                                                                                     event
                                                                                 )
                                                                             }
-                                                                            className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
+                                                                            className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-xs hover:bg-accent hover:text-accent-foreground"
                                                                         >
                                                                             <Plus
                                                                                 size={
@@ -693,7 +685,7 @@ export default function OrganisersGetAllPage() {
                                                                                             event.id
                                                                                         )
                                                                                     }
-                                                                                    className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                                                                                    className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-xs text-destructive hover:bg-destructive/10"
                                                                                 >
                                                                                     <Ban
                                                                                         size={
@@ -718,7 +710,7 @@ export default function OrganisersGetAllPage() {
                                             <tr>
                                                 <td
                                                     colSpan={5}
-                                                    className="px-5 py-16 text-center text-sm text-slate-400"
+                                                    className="px-5 py-16 text-center text-sm text-muted-foreground"
                                                 >
                                                     No events found.
                                                 </td>
@@ -752,8 +744,8 @@ export default function OrganisersGetAllPage() {
 
             {/* FEEDBACK MESSAGE */}
             {notice && (
-                <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-3 text-sm font-medium text-white shadow-xl">
-                    <Check size={16} className="text-green-400" />
+                <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-lg bg-foreground px-4 py-3 text-sm font-medium text-background shadow-xl">
+                    <Check size={16} className="text-homeText" />
                     {notice}
                     <CustomButton variant="secondary" onClick={() => setNotice('')}>
                         <X size={15} />

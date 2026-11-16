@@ -147,7 +147,7 @@ export const router = createBrowserRouter([
                         ),
                     },
                     {
-                        path: 'organisers/:id',
+                        path: 'organisers/events/:id/dashboard',
                         element: (
                             <Page>
                                 <EventsDashboard />
