@@ -171,7 +171,7 @@ export default function OrganiserEventsDashboard() {
 
                     <div className="px-4 pt-7">
                         <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                            Organiser
+                            Organizer
                         </p>
 
                         <nav className="flex gap-2 overflow-x-auto md:flex-col">

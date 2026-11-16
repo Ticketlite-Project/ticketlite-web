@@ -207,12 +207,12 @@ export default function AdminDashboard() {
         <div className="mx-auto max-w-7xl px-4 py-8 md:px-8">
             {/* Sub-header */}
             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                ORGANISER REQUESTS
+                ORGANIZER REQUESTS
             </span>
 
             {/* Page Heading */}
             <h1 className="mt-1 text-3xl font-black tracking-tight text-foreground md:text-4xl">
-                Approve organisers
+                Approve organizers
             </h1>
             <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
                 Only approved organisers can publish events. Check that each

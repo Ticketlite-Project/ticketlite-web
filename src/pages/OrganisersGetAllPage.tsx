@@ -239,62 +239,67 @@ export default function OrganisersGetAllPage() {
             <div className="flex min-h-screen flex-col md:flex-row">
                 {/* SIDEBAR */}
                 <aside
-                    className={`flex w-full flex-col border-r md:sticky md:top-0 md:h-screen md:w-60 md:shrink-0 ${panelTheme}`}
+                    className={`flex w-full flex-col border-r md:sticky md:top-0 md:h-screen md:w-56 md:shrink-0 ${panelTheme}`}
                 >
-                    <div className="flex items-center gap-2 border-b border-inherit px-6 py-6">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-700 text-white">
-                            <Ticket size={18} />
+                    <div className="flex items-center gap-2 border-b border-inherit px-4 py-4">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-lime-500 text-white">
+                            <Ticket size={16} />
                         </div>
-                        <span className="text-xl font-extrabold tracking-tight">
+                        <span className="text-lg font-extrabold tracking-tight">
                             Ticket<span className="text-green-600">Lite</span>
                         </span>
                     </div>
 
-                    <div className="px-5 pt-7">
-                        <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                            Organiser
+                    <div className="px-6 pt-8">
+                        <p className="mb-4 px-2 text-sm font-bold uppercase tracking-widest text-slate-500">
+                            Organizer
                         </p>
 
-                        <nav className="flex gap-2 overflow-x-auto md:flex-col">
+                        <nav className="flex flex-col gap-1">
                             <CustomButton
                                 variant="secondary"
+                                fullWidth
                                 onClick={() => navigate('/organisers')}
-                                className="flex shrink-0 items-center gap-3 rounded-lg bg-emerald-50 px-3 py-3 text-left text-sm font-bold text-green-800 dark:bg-green-950 dark:text-green-300"
+                                icon={<CalendarDays size={17} />}
+                                className="!flex !min-h-[62px] !w-full !flex-row !items-center !justify-start !gap-4 !rounded-lg !border-l-4 !border-emerald-700 !bg-emerald-50 !px-4 !py-4 text-left !text-base !font-bold !text-slate-950 shadow-none dark:!border-emerald-500 dark:!bg-emerald-950 dark:!text-emerald-200"
                             >
-                                <CalendarDays size={17} />
                                 My events
                             </CustomButton>
 
-                            <button
-                                onClick={() =>
-                                    navigate('/organisers/create-event')
-                                }
-                                className="flex shrink-0 items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-medium text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800"
+                            <CustomButton
+                                variant="secondary"
+                                fullWidth
+                                onClick={() => navigate('/organisers/create-event')}
+                                icon={<Plus size={17} />}
+                                className="!flex !min-h-[62px] !w-full !flex-row !items-center !justify-start !gap-4 !rounded-lg !border-l-4 !border-transparent !bg-transparent !px-4 !py-4 text-left !text-base !font-medium !text-slate-700 shadow-none transition hover:!bg-slate-100 dark:!text-slate-300 dark:hover:!bg-slate-800"
                             >
-                                <Plus size={17} />
                                 Create event
-                            </button>
+                            </CustomButton>
 
-                            <button
+                            <CustomButton
+                                variant="secondary"
+                                fullWidth
                                 onClick={() => navigate('/gate-check-in')}
-                                className="flex shrink-0 items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-medium text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800"
+                                icon={<Check size={17} />}
+                                className="!flex !min-h-[62px] !w-full !flex-row !items-center !justify-start !gap-4 !rounded-lg !border-l-4 !border-transparent !bg-transparent !px-4 !py-4 text-left !text-base !font-medium !text-slate-700 shadow-none transition hover:!bg-slate-100 dark:!text-slate-300 dark:hover:!bg-slate-800"
                             >
-                                <Check size={17} />
                                 Gate check-in
-                            </button>
+                            </CustomButton>
 
-                            <button
+                            <CustomButton
+                                variant="secondary"
+                                fullWidth
                                 onClick={() => navigate('/gate-staff')}
-                                className="flex shrink-0 items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-medium text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800"
+                                icon={<Users size={17} />}
+                                className="!flex !min-h-[62px] !w-full !flex-row !items-center !justify-start !gap-4 !rounded-lg !border-l-4 !border-transparent !bg-transparent !px-4 !py-4 text-left !text-base !font-medium !text-slate-700 shadow-none transition hover:!bg-slate-100 dark:!text-slate-300 dark:hover:!bg-slate-800"
                             >
-                                <Users size={17} />
                                 Gate staff
-                            </button>
+                            </CustomButton>
                         </nav>
                     </div>
 
                     <div className="mt-auto hidden p-5 md:block">
-                        <button
+                        <CustomButton variant="secondary"
                             onClick={toggleDarkMode}
                             className={`flex w-full items-center justify-between rounded-lg border px-3 py-3 text-xs font-semibold ${panelTheme}`}
                         >
@@ -309,7 +314,7 @@ export default function OrganisersGetAllPage() {
                             <span className="text-green-600">
                                 {darkMode ? 'ON' : 'OFF'}
                             </span>
-                        </button>
+                        </CustomButton>
                     </div>
                 </aside>
 
@@ -327,16 +332,14 @@ export default function OrganisersGetAllPage() {
                                 </h1>
                             </div>
 
-                            <CustomButton
-                                variant="primary"
-                                onClick={() =>
-                                    navigate('/organisers/create-event')
-                                }
-                                className="inline-flex items-center justify-center gap-2 rounded-lg bg-green-700 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-green-800"
-                            >
-                                <Plus size={17} />
-                                CREATE EVENT
-                            </CustomButton>
+                          <CustomButton
+    variant="primary"
+    onClick={() => navigate('/organisers/create-event')}
+    icon={<Plus size={14} />}
+    className="inline-flex items-center justify-center gap-1.5 rounded-none bg-[#00865A] px-3 py-1.5 text-xs font-bold text-white shadow-none transition-colors hover:bg-[#006F4A]"
+>
+    CREATE EVENT
+</CustomButton>
                         </header>
 
                         {/* SUMMARY CARDS */}
@@ -382,7 +385,7 @@ export default function OrganisersGetAllPage() {
                                 <div className="flex flex-wrap items-center justify-between gap-3">
                                     <div className="flex gap-5 overflow-x-auto">
                                         {filters.map((filter) => (
-                                            <button
+                                            <CustomButton variant="secondary"
                                                 key={filter}
                                                 onClick={() =>
                                                     setActiveFilter(filter)
@@ -394,7 +397,7 @@ export default function OrganisersGetAllPage() {
                                                 }`}
                                             >
                                                 {filter} ({counts[filter]})
-                                            </button>
+                                            </CustomButton>
                                         ))}
                                     </div>
 
@@ -534,7 +537,7 @@ export default function OrganisersGetAllPage() {
                                                             {event.status ===
                                                                 'published' && (
                                                                 <>
-                                                                    <button
+                                                                    <CustomButton variant="secondary"
                                                                         onClick={() =>
                                                                             navigate(
                                                                                 `/organisers/events/${event.id}/edit`
@@ -543,8 +546,8 @@ export default function OrganisersGetAllPage() {
                                                                         className="rounded-md border border-slate-200 px-3 py-2 text-[10px] font-bold text-green-700 hover:bg-green-50 dark:border-slate-700"
                                                                     >
                                                                         Edit
-                                                                    </button>
-                                                                    <button
+                                                                    </CustomButton>
+                                                                    <CustomButton variant="secondary"
                                                                         onClick={() =>
                                                                             navigate(
                                                                                 `/organisers/events/${event.id}/dashboard`
@@ -553,13 +556,13 @@ export default function OrganisersGetAllPage() {
                                                                         className="rounded-md bg-green-700 px-3 py-2 text-[10px] font-bold text-white hover:bg-green-800"
                                                                     >
                                                                         DASHBOARD
-                                                                    </button>
+                                                                    </CustomButton>
                                                                 </>
                                                             )}
 
                                                             {event.status ===
                                                                 'draft' && (
-                                                                <button
+                                                                <CustomButton variant="secondary"
                                                                     onClick={() =>
                                                                         navigate(
                                                                             `/organisers/events/${event.id}/edit`
@@ -568,12 +571,12 @@ export default function OrganisersGetAllPage() {
                                                                     className="rounded-md border border-slate-200 px-3 py-2 text-[10px] font-bold text-green-700 dark:border-slate-700"
                                                                 >
                                                                     Edit draft
-                                                                </button>
+                                                                </CustomButton>
                                                             )}
 
                                                             {event.status ===
                                                                 'ended' && (
-                                                                <button
+                                                                <CustomButton variant="secondary"
                                                                     onClick={() =>
                                                                         navigate(
                                                                             `/organisers/events/${event.id}/dashboard`
@@ -582,12 +585,12 @@ export default function OrganisersGetAllPage() {
                                                                     className="rounded-md border border-slate-200 px-3 py-2 text-[10px] font-bold text-green-700 dark:border-slate-700"
                                                                 >
                                                                     Dashboard
-                                                                </button>
+                                                                </CustomButton>
                                                             )}
 
                                                             {event.status ===
                                                                 'cancelled' && (
-                                                                <button
+                                                                <CustomButton variant="secondary"
                                                                     onClick={() =>
                                                                         navigate(
                                                                             `/events/${event.id}`
@@ -596,11 +599,11 @@ export default function OrganisersGetAllPage() {
                                                                     className="rounded-md border border-slate-200 px-3 py-2 text-[10px] font-bold text-green-700 dark:border-slate-700"
                                                                 >
                                                                     View
-                                                                </button>
+                                                                </CustomButton>
                                                             )}
 
                                                             <div className="relative">
-                                                                <button
+                                                                <CustomButton variant="secondary"
                                                                     aria-label={`More actions for ${event.title}`}
                                                                     onClick={() =>
                                                                         setOpenMenu(
@@ -617,14 +620,14 @@ export default function OrganisersGetAllPage() {
                                                                             17
                                                                         }
                                                                     />
-                                                                </button>
+                                                                </CustomButton>
 
                                                                 {openMenu ===
                                                                     event.id && (
                                                                     <div
                                                                         className={`absolute right-0 top-10 z-30 w-48 rounded-lg border p-1 shadow-xl ${panelTheme}`}
                                                                     >
-                                                                        <button
+                                                                        <CustomButton variant="secondary"
                                                                             onClick={() => {
                                                                                 navigate(
                                                                                     `/events/${event.id}`
@@ -643,9 +646,9 @@ export default function OrganisersGetAllPage() {
                                                                             View
                                                                             public
                                                                             page
-                                                                        </button>
+                                                                        </CustomButton>
 
-                                                                        <button
+                                                                        <CustomButton variant="secondary"
                                                                             onClick={() =>
                                                                                 void copyEventLink(
                                                                                     event.id
@@ -661,9 +664,9 @@ export default function OrganisersGetAllPage() {
                                                                             Copy
                                                                             event
                                                                             link
-                                                                        </button>
+                                                                        </CustomButton>
 
-                                                                        <button
+                                                                        <CustomButton variant="secondary"
                                                                             onClick={() =>
                                                                                 duplicateEvent(
                                                                                     event
@@ -678,13 +681,13 @@ export default function OrganisersGetAllPage() {
                                                                             />
                                                                             Duplicate
                                                                             event
-                                                                        </button>
+                                                                        </CustomButton>
 
                                                                         {event.status !==
                                                                             'cancelled' && (
                                                                             <>
                                                                                 <div className="my-1 border-t border-slate-200 dark:border-slate-700" />
-                                                                                <button
+                                                                                <CustomButton variant="secondary"
                                                                                     onClick={() =>
                                                                                         cancelEvent(
                                                                                             event.id
@@ -699,7 +702,7 @@ export default function OrganisersGetAllPage() {
                                                                                     />
                                                                                     Cancel
                                                                                     event
-                                                                                </button>
+                                                                                </CustomButton>
                                                                             </>
                                                                         )}
                                                                     </div>
@@ -727,7 +730,7 @@ export default function OrganisersGetAllPage() {
                         </section>
 
                         {/* MOBILE DARK MODE */}
-                        <button
+                        <CustomButton variant="secondary"
                             onClick={toggleDarkMode}
                             className={`mt-5 flex w-full items-center justify-between rounded-lg border px-4 py-3 text-xs font-semibold md:hidden ${panelTheme}`}
                         >
@@ -742,7 +745,7 @@ export default function OrganisersGetAllPage() {
                             <span className="text-green-600">
                                 {darkMode ? 'ON' : 'OFF'}
                             </span>
-                        </button>
+                        </CustomButton>
                     </div>
                 </main>
             </div>
@@ -752,9 +755,9 @@ export default function OrganisersGetAllPage() {
                 <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-3 text-sm font-medium text-white shadow-xl">
                     <Check size={16} className="text-green-400" />
                     {notice}
-                    <button onClick={() => setNotice('')}>
+                    <CustomButton variant="secondary" onClick={() => setNotice('')}>
                         <X size={15} />
-                    </button>
+                    </CustomButton>
                 </div>
             )}
         </div>
