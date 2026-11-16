@@ -1,5 +1,23 @@
 # React + TypeScript + Vite
 
+## SEO deployment configuration
+
+Set `VITE_SITE_URL` to the canonical production origin (for example,
+`https://ticketlite.example`) in the deployment environment. The build uses it
+for canonical URLs and generates `dist/sitemap.xml` plus the sitemap directive
+in `dist/robots.txt`. Without it, the build still succeeds, but skips sitemap
+generation; route metadata falls back to the current origin.
+
+Public event URLs in the sitemap are generated from the current event catalog
+in `src/mock/mock-data.ts`. When events move to the API, update sitemap
+generation to use the published event catalog. Authenticated, account, checkout,
+and unknown routes are marked `noindex`.
+
+The app is client-rendered, so route-specific metadata is applied after
+JavaScript loads. Search engines that do not render JavaScript and social
+preview crawlers may not see that metadata; server-side rendering or static
+pre-rendering is needed for fully reliable per-event search and share previews.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

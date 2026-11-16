@@ -1,5 +1,6 @@
 import { Suspense, type ReactNode } from 'react'
+import RippleLoader from './SuspenseLoader/suspense-loader'
 
 export function Page({ children }: Readonly<{ children: ReactNode }>) {
-    return <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
+    return <Suspense fallback={<RippleLoader />}>{children}</Suspense>
 }
