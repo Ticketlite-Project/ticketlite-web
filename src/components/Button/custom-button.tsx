@@ -25,12 +25,16 @@ export function CustomButton(props: CustomButtonProps) {
     const styles = buttonVariantStyles[variant]
 
     const classes = cn(
-        'relative',
-        'rounded-none',
-        'cursor-pointer',
-        'font-bold',
-        'uppercase',
-        'tracking-wide',
+    'relative',
+    'inline-flex',
+    'items-center',
+    'justify-center',
+    'gap-2',
+    'whitespace-nowrap',
+    'rounded-none',
+    'cursor-pointer',
+    'font-bold',
+    'tracking-wide',
         styles.base,
         styles.ring,
         sizeStyles[size],
