@@ -23,6 +23,8 @@ import {
 
 import { createBrowserRouter } from 'react-router'
 
+
+
 export const router = createBrowserRouter([
     {
         element: <MainLayout />,
@@ -136,16 +138,16 @@ export const router = createBrowserRouter([
                             </ProtectedRoute>
                         ),
                     },
-                    {
-                        path: 'organisers/create-event',
-                        element: (
-                            <ProtectedRoute allowedRoles={['ORGANIZER']}>
-                                <Page>
-                                    <CreateEvent />
-                                </Page>
-                            </ProtectedRoute>
-                        ),
-                    },
+                   {
+    path: 'organisers/create-event',
+    element: (
+        <ProtectedRoute allowedRoles={['ORGANIZER']}>
+            <Page>
+                <CreateEvent />
+            </Page>
+        </ProtectedRoute>
+    ),
+},
                     {
                         path: 'organisers/events/:id/dashboard',
                         element: (
