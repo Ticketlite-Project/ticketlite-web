@@ -5,6 +5,7 @@ import {
     Copy,
     EllipsisVertical,
     Eye,
+    Link2,
     Moon,
     Plus,
     Search,
@@ -13,83 +14,130 @@ import {
     Users,
     X,
 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { apiClient } from '../api/axios'
 import { useNavigate } from 'react-router'
 import { CustomButton } from '../components/Button/custom-button'
 
 type EventStatus = 'published' | 'draft' | 'ended' | 'cancelled'
 
 interface OrganiserEvent {
-    id: number
+    id: number | string
     title: string
     date: string
     time: string
     venue: string
     status: EventStatus
-    sold: number
+    sold: number | null
     capacity: number
-    revenue: number
+    revenue: number | null
+    apiEvent: ApiEvent
+}
+
+interface ApiTicketType {
+    id?: number | string
+    name?: string
+    price?: number | string
+    quantity?: number | string
+}
+
+
+interface ApiEvent {
+    id: number | string
+    title?: string
+    category?: string
+    description?: string
+    banner_image?: string | null
+    venue?: string
+    city?: string
+    start_date?: string
+    end_date?: string
+    status?: string
+    ticket_types?: ApiTicketType[]
 }
 
 type FilterTab = 'All' | 'Published' | 'Drafts' | 'Past' | 'Cancelled'
 
-const initialEvents: OrganiserEvent[] = [
-    {
-        id: 1,
-        title: 'Campus Jazz Night',
-        date: 'Nov 14',
-        time: 'Sat 14 Nov · 7:00 PM',
-        venue: 'Great Hall, KNUST',
-        status: 'published',
-        sold: 352,
-        capacity: 500,
-        revenue: 17200,
-    },
-    {
-        id: 2,
-        title: 'Lunchtime Acoustic Set',
-        date: 'Dec 2',
-        time: 'Wed 2 Dec · 12:30 PM',
-        venue: 'Students Centre, KNUST',
-        status: 'published',
-        sold: 64,
-        capacity: 150,
-        revenue: 1280,
-    },
-    {
-        id: 3,
-        title: 'End-of-Semester Choir Concert',
-        date: 'Dec 11',
-        time: 'Fri 11 Dec · 6:00 PM',
-        venue: 'Great Hall, KNUST',
-        status: 'draft',
-        sold: 0,
-        capacity: 300,
-        revenue: 0,
-    },
-    {
-        id: 4,
-        title: "Freshers' Welcome Jam",
-        date: 'Sep 26',
-        time: 'Sat 26 Sep · 8:00 PM',
-        venue: 'Unity Hall, KNUST',
-        status: 'ended',
-        sold: 212,
-        capacity: 250,
-        revenue: 9760,
-    },
-    {
-        id: 5,
-        title: 'Open Mic Night',
-        date: 'Oct 30',
-        time: 'Fri 30 Oct · 7:00 PM',
-        venue: 'Was at Great Hall, KNUST',
-        status: 'cancelled',
-        sold: 0,
-        capacity: 120,
-        revenue: 0,
-    },
-]
+const getApiEvents = (payload: unknown): ApiEvent[] => {
+    if (Array.isArray(payload)) return payload as ApiEvent[]
+
+    if (payload && typeof payload === 'object') {
+        const data = payload as Record<string, unknown>
+
+        if (Array.isArray(data.results)) return data.results as ApiEvent[]
+        if (Array.isArray(data.events)) return data.events as ApiEvent[]
+        if (Array.isArray(data.data)) return data.data as ApiEvent[]
+    }
+
+    return []
+}
+
+const formatEventDate = (value?: string) => {
+    if (!value) return { date: '—', time: 'Date not set', timestamp: null as number | null }
+
+    const parsed = new Date(value)
+    if (Number.isNaN(parsed.getTime())) {
+        return { date: '—', time: value, timestamp: null as number | null }
+    }
+
+    return {
+        date: parsed.toLocaleDateString('en-GH', {
+            month: 'short',
+            day: 'numeric',
+            timeZone: 'Africa/Accra',
+        }),
+        time: parsed.toLocaleString('en-GH', {
+            weekday: 'short',
+            day: 'numeric',
+            month: 'short',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+            timeZone: 'Africa/Accra',
+        }),
+        timestamp: parsed.getTime(),
+    }
+}
+
+const mapApiEvent = (event: ApiEvent, source: 'published' | 'draft'): OrganiserEvent => {
+    const start = formatEventDate(event.start_date)
+    const end = event.end_date ? new Date(event.end_date).getTime() : null
+    const rawStatus = (event.status ?? '').toLowerCase()
+
+    let status: EventStatus
+    if (rawStatus.includes('cancel')) {
+        status = 'cancelled'
+    } else if (source === 'draft' || rawStatus.includes('draft')) {
+        status = 'draft'
+    } else if (
+        (end !== null && !Number.isNaN(end) && end < Date.now()) ||
+        (start.timestamp !== null && start.timestamp < Date.now() && !event.end_date)
+    ) {
+        status = 'ended'
+    } else {
+        // The published endpoint is authoritative for published status.
+        status = 'published'
+    }
+
+    const capacity = (event.ticket_types ?? []).reduce(
+        (total, ticketType) => total + (Number(ticketType.quantity) || 0),
+        0
+    )
+
+    return {
+        id: event.id,
+        title: event.title || 'Untitled event',
+        date: start.date,
+        time: start.time,
+        venue: [event.venue, event.city].filter(Boolean).join(', ') || 'Venue not provided',
+        status,
+        // The current events API does not return ticket sales or revenue.
+        sold: null,
+        capacity,
+        revenue: null,
+        apiEvent: event,
+    }
+}
 
 const filters: FilterTab[] = ['All', 'Published', 'Drafts', 'Past', 'Cancelled']
 
@@ -98,22 +146,76 @@ const formatMoney = (amount: number) => `GHS ${amount.toLocaleString('en-GH')}`
 export default function OrganisersGetAllPage() {
     const navigate = useNavigate()
 
-    const [events, setEvents] = useState(initialEvents)
+    const [events, setEvents] = useState<OrganiserEvent[]>([])
+    const [loading, setLoading] = useState(true)
+    const [loadError, setLoadError] = useState('')
     const [activeFilter, setActiveFilter] = useState<FilterTab>('All')
-    const [openMenu, setOpenMenu] = useState<number | null>(null)
+    const [openMenu, setOpenMenu] = useState<number | string | null>(null)
     const [searchTerm, setSearchTerm] = useState('')
     const [darkMode, setDarkMode] = useState(
         () => localStorage.getItem('ticketlite-organiser-dark') === 'true'
     )
     const [notice, setNotice] = useState('')
 
+    useEffect(() => {
+        let isActive = true
+
+        const loadEvents = async () => {
+            setLoading(true)
+            setLoadError('')
+
+            try {
+                // These endpoints serve different event groups:
+                // /published/ returns published events, /my-events/ returns drafts.
+                const [publishedResponse, draftsResponse] = await Promise.all([
+                    apiClient.get('/events/published/'),
+                    apiClient.get('/events/my-events/'),
+                ])
+
+                const publishedEvents = getApiEvents(publishedResponse.data).map(
+                    (event) => mapApiEvent(event, 'published')
+                )
+                const draftEvents = getApiEvents(draftsResponse.data).map(
+                    (event) => mapApiEvent(event, 'draft')
+                )
+
+                // Keep one row per event ID; published results take precedence.
+                const combinedEvents = new Map<string, OrganiserEvent>()
+                draftEvents.forEach((event) => {
+                    combinedEvents.set(String(event.id), event)
+                })
+                publishedEvents.forEach((event) => {
+                    combinedEvents.set(String(event.id), event)
+                })
+
+                if (isActive) {
+                    setEvents(Array.from(combinedEvents.values()))
+                }
+            } catch (error) {
+                if (isActive) {
+                    const message =
+                        error instanceof Error
+                            ? error.message
+                            : 'Unable to load your events. Please try again.'
+                    setLoadError(message)
+                }
+            } finally {
+                if (isActive) setLoading(false)
+            }
+        }
+
+        void loadEvents()
+
+        return () => {
+            isActive = false
+        }
+    }, [])
+
     const upcomingEvents = events.filter(
         (event) => event.status === 'published'
     ).length
 
-    const totalSold = events.reduce((sum, event) => sum + event.sold, 0)
-
-    const totalRevenue = events.reduce((sum, event) => sum + event.revenue, 0)
+    // Sales and revenue are not included in the current events API response.
 
     const counts: Record<FilterTab, number> = {
         All: events.length,
@@ -154,7 +256,7 @@ export default function OrganisersGetAllPage() {
         window.setTimeout(() => setNotice(''), 3000)
     }
 
-    const copyEventLink = async (eventId: number) => {
+    const copyEventLink = async (eventId: number | string) => {
         const link = `${window.location.origin}/events/${eventId}`
 
         try {
@@ -167,38 +269,68 @@ export default function OrganisersGetAllPage() {
         setOpenMenu(null)
     }
 
+    const publishDraft = async (eventId: number | string) => {
+        const confirmed = window.confirm('Publish this draft event now?')
+        if (!confirmed) return
+
+        try {
+            await apiClient.post(`/events/${eventId}/publish/`)
+            setEvents((current) => current.map((event) =>
+                event.id === eventId ? { ...event, status: 'published' } : event
+            ))
+            setOpenMenu(null)
+            showNotice('Event published successfully.')
+        } catch (error) {
+            console.error('Draft publishing failed:', error)
+            const responseMessage = (error as { response?: { data?: { detail?: string; message?: string } } })
+                ?.response?.data?.detail
+                || (error as { response?: { data?: { message?: string } } })?.response?.data?.message
+                || 'Unable to publish this event. Please try again.'
+            showNotice(responseMessage)
+        }
+    }
+
     const duplicateEvent = (event: OrganiserEvent) => {
         const duplicate: OrganiserEvent = {
             ...event,
-            id: Math.max(0, ...events.map((item) => item.id)) + 1,
+            id: `local-copy-${Date.now()}`,
             title: `${event.title} (Copy)`,
             status: 'draft',
-            sold: 0,
-            revenue: 0,
+            sold: null,
+            revenue: null,
         }
 
         setEvents((current) => [...current, duplicate])
         setActiveFilter('All')
         setOpenMenu(null)
-        showNotice('Event duplicated as a draft.')
+        showNotice('A local draft copy was added. It has not been saved to the server.')
     }
 
-    const cancelEvent = (eventId: number) => {
-        const confirmed = window.confirm(
-            'Are you sure you want to cancel this event?'
-        )
+    const cancelEvent = async (eventId: number | string) => {
+    const confirmed = window.confirm(
+        'Are you sure you want to cancel this event?'
+    )
 
-        if (!confirmed) return
+    if (!confirmed) return
+
+    try {
+        await apiClient.post(`/events/${eventId}/cancel/`)
 
         setEvents((current) =>
             current.map((event) =>
-                event.id === eventId ? { ...event, status: 'cancelled' } : event
+                event.id === eventId
+                    ? { ...event, status: 'cancelled' }
+                    : event
             )
         )
 
         setOpenMenu(null)
-        showNotice('Event marked as cancelled.')
+        showNotice('Event cancelled successfully.')
+    } catch (error) {
+        console.error('Failed to cancel event:', error)
+        showNotice('Failed to cancel event. Please try again.')
     }
+}
 
     const statusStyle = (status: EventStatus) => {
         switch (status) {
@@ -356,7 +488,7 @@ export default function OrganisersGetAllPage() {
                                     Tickets sold, all events
                                 </p>
                                 <p className="mt-1 text-2xl font-extrabold">
-                                    {totalSold.toLocaleString()}
+                                    —
                                 </p>
                             </div>
 
@@ -367,7 +499,7 @@ export default function OrganisersGetAllPage() {
                                     Gross revenue, all events
                                 </p>
                                 <p className="mt-1 text-2xl font-extrabold">
-                                    {formatMoney(totalRevenue)}
+                                    —
                                 </p>
                             </div>
                         </section>
@@ -436,17 +568,7 @@ export default function OrganisersGetAllPage() {
                                     </thead>
 
                                     <tbody>
-                                        {visibleEvents.map((event) => {
-                                            const percentage =
-                                                event.capacity > 0
-                                                    ? Math.min(
-                                                          100,
-                                                          (event.sold /
-                                                              event.capacity) *
-                                                              100
-                                                      )
-                                                    : 0
-
+                                        {!loading && !loadError && visibleEvents.map((event) => {
                                             return (
                                                 <tr
                                                     key={event.id}
@@ -502,49 +624,30 @@ export default function OrganisersGetAllPage() {
                                                     <td className="px-4 py-4">
                                                         <div className="w-28">
                                                             <p className="mb-2 text-[10px] font-medium">
-                                                                {event.sold} /{' '}
-                                                                {event.capacity}
+                                                                {event.sold === null ? '—' : event.sold} /{' '}
+                                                                {event.capacity || '—'}
                                                             </p>
-                                                            <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
-                                                                <div
-                                                                    className="h-full rounded-full bg-headerBackground"
-                                                                    style={{
-                                                                        width: `${percentage}%`,
-                                                                    }}
-                                                                />
-                                                            </div>
                                                         </div>
                                                     </td>
 
                                                     <td className="px-4 py-4 text-xs font-medium">
-                                                        {event.revenue > 0
-                                                            ? formatMoney(
-                                                                  event.revenue
-                                                              )
-                                                            : '—'}
+                                                        {event.revenue === null
+                                                            ? '—'
+                                                            : formatMoney(event.revenue)}
                                                     </td>
 
                                                     <td className="px-4 py-4">
                                                         <div className="flex items-center justify-end gap-2">
-                                                            {event.status ===
-                                                                'published' && (
+                                                            {event.status === 'published' && (
                                                                 <>
                                                                     <CustomButton variant="secondary"
-                                                                        onClick={() =>
-                                                                            navigate(
-                                                                                `/organisers/events/${event.id}/edit`
-                                                                            )
-                                                                        }
+                                                                        onClick={() => navigate('/organisers/create-event', { state: { event: event.apiEvent } })}
                                                                         className="rounded-md border border-border px-3 py-2 text-[10px] font-bold text-homeText hover:bg-accent"
                                                                     >
-                                                                        Edit
+                                                                        EDIT
                                                                     </CustomButton>
                                                                     <CustomButton variant="secondary"
-                                                                        onClick={() =>
-                                                                            navigate(
-                                                                                `/organisers/events/${event.id}/dashboard`
-                                                                            )
-                                                                        }
+                                                                        onClick={() => navigate(`/organisers/events/${event.id}/dashboard`)}
                                                                         className="rounded-md bg-headerBackground px-3 py-2 text-[10px] font-bold text-white hover:opacity-90"
                                                                     >
                                                                         DASHBOARD
@@ -552,18 +655,21 @@ export default function OrganisersGetAllPage() {
                                                                 </>
                                                             )}
 
-                                                            {event.status ===
-                                                                'draft' && (
-                                                                <CustomButton variant="secondary"
-                                                                    onClick={() =>
-                                                                        navigate(
-                                                                            `/organisers/events/${event.id}/edit`
-                                                                        )
-                                                                    }
-                                                                    className="rounded-md border border-border px-3 py-2 text-[10px] font-bold text-homeText hover:bg-accent"
-                                                                >
-                                                                    Edit draft
-                                                                </CustomButton>
+                                                            {event.status === 'draft' && (
+                                                                <>
+                                                                    <CustomButton variant="secondary"
+                                                                        onClick={() => navigate('/organisers/create-event', { state: { event: event.apiEvent } })}
+                                                                        className="rounded-md border border-border px-3 py-2 text-[10px] font-bold text-homeText hover:bg-accent"
+                                                                    >
+                                                                        EDIT
+                                                                    </CustomButton>
+                                                                    <CustomButton variant="secondary"
+                                                                        onClick={() => void publishDraft(event.id)}
+                                                                        className="rounded-md bg-headerBackground px-3 py-2 text-[10px] font-bold text-white hover:opacity-90"
+                                                                    >
+                                                                        PUBLISH
+                                                                    </CustomButton>
+                                                                </>
                                                             )}
 
                                                             {event.status ===
@@ -614,86 +720,47 @@ export default function OrganisersGetAllPage() {
                                                                     />
                                                                 </CustomButton>
 
-                                                                {openMenu ===
-                                                                    event.id && (
-                                                                    <div
-                                                                        className={`absolute right-0 top-10 z-30 w-48 rounded-lg border p-1 shadow-xl ${panelTheme}`}
-                                                                    >
-                                                                        <CustomButton variant="secondary"
+                                                                {openMenu === event.id && (
+<div className="absolute right-0 top-11 z-50 w-max max-w-[calc(100vw-2rem)] rounded-xl border-2 border-[#dedede] bg-white py-2 pl-2 pr-9 text-black shadow-xl">                                                                        <CustomButton
+                                                                            variant="secondary"
+                                                                            icon={<Eye size={18} strokeWidth={2} />}
                                                                             onClick={() => {
-                                                                                navigate(
-                                                                                    `/events/${event.id}`
-                                                                                )
-                                                                                setOpenMenu(
-                                                                                    null
-                                                                                )
+                                                                                navigate(`/events/${event.id}`)
+                                                                                setOpenMenu(null)
                                                                             }}
-                                                                            className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-xs hover:bg-accent hover:text-accent-foreground"
+                                                                            className="!flex !min-h-[48px] !w-full !items-center !justify-start !gap-3 !rounded-lg !bg-white !pl-4 !pr-2 !py-2.5 !text-left !text-xs !font-normal !text-black shadow-none hover:!bg-gray-100"
                                                                         >
-                                                                            <Eye
-                                                                                size={
-                                                                                    14
-                                                                                }
-                                                                            />
-                                                                            View
-                                                                            public
-                                                                            page
+                                                                            View public page
                                                                         </CustomButton>
 
-                                                                        <CustomButton variant="secondary"
-                                                                            onClick={() =>
-                                                                                void copyEventLink(
-                                                                                    event.id
-                                                                                )
-                                                                            }
-                                                                            className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-xs hover:bg-accent hover:text-accent-foreground"
+                                                                        <CustomButton
+                                                                            variant="secondary"
+                                                                            icon={<Link2 size={18} strokeWidth={2} />}
+                                                                            onClick={() => void copyEventLink(event.id)}
+                                                                            className="!flex !min-h-[48px] !w-full !items-center !justify-start !gap-3 !rounded-lg !bg-white !pl-4 !pr-2 !py-2.5 !text-left !text-xs !font-normal !text-black shadow-none hover:!bg-gray-100"
                                                                         >
-                                                                            <Copy
-                                                                                size={
-                                                                                    14
-                                                                                }
-                                                                            />
-                                                                            Copy
-                                                                            event
-                                                                            link
+                                                                            Copy event link
                                                                         </CustomButton>
 
-                                                                        <CustomButton variant="secondary"
-                                                                            onClick={() =>
-                                                                                duplicateEvent(
-                                                                                    event
-                                                                                )
-                                                                            }
-                                                                            className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-xs hover:bg-accent hover:text-accent-foreground"
+                                                                        <CustomButton
+                                                                            variant="secondary"
+                                                                            icon={<Copy size={18} strokeWidth={2} />}
+                                                                            onClick={() => duplicateEvent(event)}
+                                                                            className="!flex !min-h-[48px] !w-full !items-center !justify-start !gap-3 !rounded-lg !bg-white !pl-4 !pr-2 !py-2.5 !text-left !text-xs !font-normal !text-black shadow-none hover:!bg-gray-100"
                                                                         >
-                                                                            <Plus
-                                                                                size={
-                                                                                    14
-                                                                                }
-                                                                            />
-                                                                            Duplicate
-                                                                            event
+                                                                            Duplicate event
                                                                         </CustomButton>
 
-                                                                        {event.status !==
-                                                                            'cancelled' && (
+                                                                        {event.status !== 'cancelled' && (
                                                                             <>
-                                                                                <div className="my-1 border-t border-slate-200 dark:border-slate-700" />
-                                                                                <CustomButton variant="secondary"
-                                                                                    onClick={() =>
-                                                                                        cancelEvent(
-                                                                                            event.id
-                                                                                        )
-                                                                                    }
-                                                                                    className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-xs text-destructive hover:bg-destructive/10"
+                                                                                <div className="my-2 border-t-2 border-[#e5e5e5]" />
+                                                                                <CustomButton
+                                                                                    variant="secondary"
+                                                                                    icon={<Ban size={18} strokeWidth={2} />}
+                                                                                    onClick={() => cancelEvent(event.id)}
+                                                                                    className="!flex !min-h-[48px] !w-full !items-center !justify-start !gap-3 !rounded-lg !bg-white !pl-4 !pr-2 !py-2.5 !text-left !text-xs !font-semibold !text-[#c41414] shadow-none hover:!bg-red-50"
                                                                                 >
-                                                                                    <Ban
-                                                                                        size={
-                                                                                            14
-                                                                                        }
-                                                                                    />
-                                                                                    Cancel
-                                                                                    event
+                                                                                    Cancel event
                                                                                 </CustomButton>
                                                                             </>
                                                                         )}
@@ -706,7 +773,7 @@ export default function OrganisersGetAllPage() {
                                             )
                                         })}
 
-                                        {visibleEvents.length === 0 && (
+                                        {!loading && !loadError && visibleEvents.length === 0 && (
                                             <tr>
                                                 <td
                                                     colSpan={5}

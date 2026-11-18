@@ -1,66 +1,51 @@
+
 import {
     CalendarDays,
+    Check,
     CheckCircle2,
     ChevronRight,
     Download,
     Plus,
+    RefreshCw,
     ScanLine,
     Ticket,
     Users,
 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
-import { CustomAlert } from '../components/Alert/custom-alert'
+import { apiClient } from '../api/axios'
+import { CustomButton } from '../components/Button/custom-button'
 
-type OrderStatus = 'Paid' | 'Held' | 'Payment failed'
+type TicketType = {
+    id?: number | string
+    name: string
+    price: string | number
+    quantity: number
+}
 
-interface Order {
+type OrganizerEvent = {
+    id: number | string
+    title: string
+    category: string
+    city: string
+    description: string
+    venue: string
+    start_date: string
+    end_date: string
+    banner_image?: string | null
+    status?: string
+    ticket_types: TicketType[]
+    created_at?: string
+    updated_at?: string
+}
+
+type Order = {
     id: string
     buyer: string
     tickets: string
     total: number
-    status: OrderStatus
+    status: string
 }
-
-const salesData = [12, 8, 15, 22, 18, 9, 30, 42, 26, 19, 35, 49, 53, 17]
-
-const initialOrders: Order[] = [
-    {
-        id: 'TL-48291',
-        buyer: 'Kwame A.',
-        tickets: '2 × Regular',
-        total: 80,
-        status: 'Paid',
-    },
-    {
-        id: 'TL-48290',
-        buyer: 'Esi B.',
-        tickets: '1 × VIP',
-        total: 100,
-        status: 'Paid',
-    },
-    {
-        id: 'TL-48288',
-        buyer: 'Yaw O.',
-        tickets: '3 × Regular',
-        total: 120,
-        status: 'Held',
-    },
-    {
-        id: 'TL-48285',
-        buyer: 'Abena K.',
-        tickets: '1 × Regular',
-        total: 40,
-        status: 'Payment failed',
-    },
-    {
-        id: 'TL-48281',
-        buyer: 'Kojo D.',
-        tickets: '2 × VIP',
-        total: 200,
-        status: 'Paid',
-    },
-]
 
 const money = (amount: number) =>
     `GHS ${amount.toLocaleString('en-GH', {
@@ -68,65 +53,233 @@ const money = (amount: number) =>
         maximumFractionDigits: 2,
     })}`
 
-const formatMoney = money
+const getEventsFromResponse = (data: unknown): OrganizerEvent[] => {
+    if (Array.isArray(data)) return data as OrganizerEvent[]
 
-export default function OrganiserEventsDashboard() {
+    if (!data || typeof data !== 'object') return []
+
+    const response = data as Record<string, unknown>
+
+    if (Array.isArray(response.results)) {
+        return response.results as OrganizerEvent[]
+    }
+
+    if (Array.isArray(response.events)) {
+        return response.events as OrganizerEvent[]
+    }
+
+    if (Array.isArray(response.data)) {
+        return response.data as OrganizerEvent[]
+    }
+
+    return []
+}
+
+const formatDate = (value: string) => {
+    if (!value) return 'Date unavailable'
+
+    const date = new Date(value)
+
+    if (Number.isNaN(date.getTime())) return 'Date unavailable'
+
+    return date.toLocaleDateString('en-GH', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+    })
+}
+
+const formatTime = (value: string) => {
+    if (!value) return ''
+
+    const date = new Date(value)
+
+    if (Number.isNaN(date.getTime())) return ''
+
+    return date.toLocaleTimeString('en-GH', {
+        hour: 'numeric',
+        minute: '2-digit',
+    })
+}
+
+const formatCategory = (category: string) => {
+    const categories: Record<string, string> = {
+        MUSIC: 'Music',
+        CHURCH: 'Church',
+        CAMPUS: 'Campus',
+        TECH_MEETUPS: 'Tech & Meetups',
+        ARTS_CULTURE: 'Arts & Culture',
+        SPORTS: 'Sports',
+    }
+
+    return categories[category] ?? category
+}
+
+const getErrorMessage = (error: unknown) => {
+    const apiError = error as {
+        response?: {
+            data?: {
+                detail?: string
+                message?: string
+            }
+        }
+        message?: string
+    }
+
+    return (
+        apiError.response?.data?.detail ||
+        apiError.response?.data?.message ||
+        apiError.message ||
+        'Unable to load your events. Please try again.'
+    )
+}
+
+export default function OrganizerEventsDashboard() {
     const navigate = useNavigate()
     const { id } = useParams()
 
-    const [orders] = useState<Order[]>(initialOrders)
-    const [notice, setNotice] = useState('')
+    const [events, setEvents] = useState<OrganizerEvent[]>([])
+    const [loading, setLoading] = useState(true)
+    const [refreshing, setRefreshing] = useState(false)
+    const [error, setError] = useState('')
 
-    // Sample dashboard values. Replace with API data when connected.
-    const event = {
-        id: id ?? '1',
-        name: 'Campus Jazz Night',
-        status: 'PUBLISHED',
-        date: 'Sat 14 Nov 2026',
-        time: '7:00 PM',
-        venue: 'Great Hall, KNUST, Kumasi',
-        ticketsSold: 352,
-        capacity: 500,
-        revenue: 17200,
-        checkedIn: 313,
-        regularSold: 300,
-        regularCapacity: 440,
-        regularRevenue: 12000,
-        vipSold: 52,
-        vipCapacity: 60,
-        vipRevenue: 5200,
+    const fetchEvents = useCallback(async (isRefresh = false) => {
+        if (isRefresh) setRefreshing(true)
+
+        try {
+            // Fetch published events and drafts separately.
+            const [publishedResult, draftsResult] = await Promise.allSettled([
+                apiClient.get('/events/published/'),
+                apiClient.get('/events/my-events/'),
+            ])
+
+            const published =
+                publishedResult.status === 'fulfilled'
+                    ? getEventsFromResponse(publishedResult.value.data)
+                    : []
+
+            const drafts =
+                draftsResult.status === 'fulfilled'
+                    ? getEventsFromResponse(draftsResult.value.data)
+                    : []
+
+            if (
+                publishedResult.status === 'rejected' &&
+                draftsResult.status === 'rejected'
+            ) {
+                throw publishedResult.reason
+            }
+
+            // Published records take precedence when IDs overlap.
+            const eventMap = new Map<string, OrganizerEvent>()
+
+            drafts.forEach((event) => {
+                eventMap.set(String(event.id), event)
+            })
+
+            published.forEach((event) => {
+                eventMap.set(String(event.id), event)
+            })
+
+            setEvents(Array.from(eventMap.values()))
+            setError('')
+        } catch (err) {
+            setError(getErrorMessage(err))
+        } finally {
+            setLoading(false)
+            setRefreshing(false)
+        }
+    }, [])
+
+   useEffect(() => {
+    let cancelled = false
+
+    const loadEvents = async () => {
+        try {
+            const [publishedResult, draftsResult] = await Promise.allSettled([
+                apiClient.get('/events/published/'),
+                apiClient.get('/events/my-events/'),
+            ])
+
+            if (cancelled) return
+
+            const published =
+                publishedResult.status === 'fulfilled'
+                    ? getEventsFromResponse(publishedResult.value.data)
+                    : []
+
+            const drafts =
+                draftsResult.status === 'fulfilled'
+                    ? getEventsFromResponse(draftsResult.value.data)
+                    : []
+
+            if (
+                publishedResult.status === 'rejected' &&
+                draftsResult.status === 'rejected'
+            ) {
+                throw publishedResult.reason
+            }
+
+            const eventMap = new Map<string, OrganizerEvent>()
+
+            drafts.forEach((item) => {
+                eventMap.set(String(item.id), item)
+            })
+
+            published.forEach((item) => {
+                eventMap.set(String(item.id), item)
+            })
+
+            setEvents(Array.from(eventMap.values()))
+            setError('')
+        } catch (err) {
+            if (!cancelled) {
+                setError(getErrorMessage(err))
+            }
+        } finally {
+            if (!cancelled) {
+                setLoading(false)
+            }
+        }
     }
 
-    const soldPercentage = Math.round(
-        (event.ticketsSold / event.capacity) * 100
-    )
+    void loadEvents()
 
-    const checkedPercentage = Math.round(
-        (event.checkedIn / event.ticketsSold) * 100
-    )
-
-    const averageOrder =
-        event.ticketsSold > 0 ? event.revenue / event.ticketsSold : 0
-
-    const totalOrders = useMemo(() => orders.length, [orders])
-
-    const showNotice = (message: string) => {
-        setNotice(message)
-        window.setTimeout(() => setNotice(''), 3000)
+    return () => {
+        cancelled = true
     }
+}, [])
+
+    const event = useMemo(() => {
+        if (id) {
+            return events.find((item) => String(item.id) === String(id))
+        }
+
+        return events[0]
+    }, [events, id])
+
+    const ticketTypes = event?.ticket_types ?? []
+
+    const totalCapacity = ticketTypes.reduce(
+        (total, ticket) => total + Number(ticket.quantity || 0),
+        0
+    )
+
+    const orders: Order[] = []
+
+    const panelClass = 'border-border bg-card text-card-foreground'
 
     const exportOrders = () => {
         const header = ['Order', 'Buyer', 'Tickets', 'Total', 'Status']
 
-        const rows = orders.map((order) => [
+        const csv = [header, ...orders.map((order) => [
             order.id,
             order.buyer,
             order.tickets,
             order.total,
             order.status,
-        ])
-
-        const csv = [header, ...rows]
+        ])]
             .map((row) =>
                 row
                     .map((value) => `"${String(value).replace(/"/g, '""')}"`)
@@ -142,90 +295,187 @@ export default function OrganiserEventsDashboard() {
         const link = document.createElement('a')
 
         link.href = url
-        link.download = `${event.name.replace(/\s+/g, '-').toLowerCase()}-orders.csv`
+        link.download = `${event?.title.replace(/\s+/g, '-').toLowerCase() || 'event'}-orders.csv`
         link.click()
 
         URL.revokeObjectURL(url)
-        showNotice('Orders exported successfully.')
     }
 
-    // const copyEventLink = async () => {
-    //     try {
-    //         await navigator.clipboard.writeText(
-    //             `${window.location.origin}/events/${event.id}`
-    //         )
-    //         showNotice('Event link copied.')
-    //     } catch {
-    //         showNotice('Unable to copy event link.')
-    //     }
-    // }
 
-    const panelClass = 'border-border bg-card text-card-foreground'
+    if (loading) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
+                <div className="flex flex-col items-center gap-3">
+                    <RefreshCw
+                        className="animate-spin text-homeText"
+                        size={28}
+                    />
+                    <p className="text-sm text-muted-foreground">
+                        Loading your event dashboard...
+                    </p>
+                </div>
+            </div>
+        )
+    }
+
+    if (error) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-background px-4 text-foreground">
+                <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 text-center">
+                    <h2 className="text-lg font-extrabold">
+                        Unable to load dashboard
+                    </h2>
+
+                    <p className="mt-2 text-sm text-muted-foreground">
+                        {error}
+                    </p>
+
+                    <button
+                        onClick={() => void fetchEvents(true)}
+                        disabled={refreshing}
+                        className="mt-5 inline-flex items-center gap-2 rounded-md bg-headerBackground px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+                    >
+                        <RefreshCw
+                            size={15}
+                            className={refreshing ? 'animate-spin' : ''}
+                        />
+                        Try again
+                    </button>
+                </div>
+            </div>
+        )
+    }
+
+    if (!events.length) {
+        return (
+            <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 text-center text-foreground">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+                    <Ticket size={30} className="text-muted-foreground" />
+                </div>
+
+                <h2 className="mt-5 text-xl font-extrabold">
+                    No events yet
+                </h2>
+
+                <p className="mt-2 max-w-sm text-sm text-muted-foreground">
+                    Events you create will appear here.
+                </p>
+
+                <button
+                    onClick={() => navigate('/organisers/create-event')}
+                    className="mt-5 inline-flex items-center gap-2 rounded-md bg-headerBackground px-4 py-3 text-xs font-bold text-white"
+                >
+                    <Plus size={15} />
+                    CREATE EVENT
+                </button>
+
+                <button
+                    onClick={() => void fetchEvents(true)}
+                    disabled={refreshing}
+                    className="mt-4 text-xs font-semibold text-homeText disabled:opacity-50"
+                >
+                    Refresh events
+                </button>
+            </div>
+        )
+    }
+
+    if (!event) {
+        return (
+            <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 text-center text-foreground">
+                <h2 className="text-xl font-extrabold">Event not found</h2>
+
+                <p className="mt-2 text-sm text-muted-foreground">
+                    This event could not be found in your organizer account.
+                </p>
+
+                <button
+                    onClick={() => navigate('/organisers')}
+                    className="mt-5 rounded-md bg-headerBackground px-4 py-2 text-xs font-bold text-white"
+                >
+                    BACK TO MY EVENTS
+                </button>
+            </div>
+        )
+    }
+
+    const eventStatus = event.status?.toUpperCase() || 'PUBLISHED'
+const panelTheme = 'border-border bg-card text-card-foreground'
 
     return (
         <div className="min-h-screen bg-background text-foreground">
             <div className="flex min-h-screen flex-col md:flex-row">
-                {/* ORGANISER SIDEBAR */}
+
+               
+  {/* SIDEBAR */}
                 <aside
-                    className={`flex w-full shrink-0 flex-col border-r md:sticky md:top-0 md:h-screen md:w-56 ${panelClass}`}
+                    className={`flex w-full flex-col border-r md:sticky md:top-0 md:h-screen md:w-56 md:shrink-0 ${panelTheme}`}
                 >
-                    <div className="flex items-center gap-2 border-b border-border px-5 py-6">
-                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-headerBackground text-white">
-                            <Ticket size={17} />
-                        </span>
-                        <span className="text-lg font-extrabold">
-                            Ticket<span className="text-homeText">Lite</span>
+                    <div className="flex items-center gap-2 border-b border-inherit px-4 py-4">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-lime-500 text-white">
+                            <Ticket size={16} />
+                        </div>
+                        <span className="text-lg font-extrabold tracking-tight">
+                            Ticket<span className="text-green-600">Lite</span>
                         </span>
                     </div>
 
-                    <div className="px-4 pt-7">
-                        <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                    <div className="px-6 pt-8">
+                        <p className="mb-4 px-2 text-sm font-bold uppercase tracking-widest text-slate-500">
                             Organizer
                         </p>
 
-                        <nav className="flex gap-2 overflow-x-auto md:flex-col">
-                            <button
+                        <nav className="flex flex-col gap-1">
+                            <CustomButton
+                                variant="secondary"
+                                fullWidth
                                 onClick={() => navigate('/organisers')}
-                                className="flex shrink-0 items-center gap-3 rounded-lg bg-accent px-3 py-3 text-left text-xs font-bold text-accent-foreground"
+                                icon={<CalendarDays size={17} />}
+                                className="!flex !min-h-[62px] !w-full !flex-row !items-center !justify-start !gap-4 !rounded-lg !border-l-4 !border-emerald-700 !bg-emerald-50 !px-4 !py-4 text-left !text-base !font-bold !text-slate-950 shadow-none dark:!border-emerald-500 dark:!bg-emerald-950 dark:!text-emerald-200"
                             >
-                                <CalendarDays size={16} />
                                 My events
-                            </button>
+                            </CustomButton>
 
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    navigate('/organisers/create-event')
-                                }
-                                className="flex shrink-0 items-center gap-3 rounded-lg px-3 py-3 text-left text-xs font-medium text-muted-foreground transition hover:bg-accent hover:text-accent-foreground"
+                            <CustomButton
+                                variant="secondary"
+                                fullWidth
+                                onClick={() => navigate('/organisers/create-event')}
+                                icon={<Plus size={17} />}
+                                className="!flex !min-h-[62px] !w-full !flex-row !items-center !justify-start !gap-4 !rounded-lg !border-l-4 !border-transparent !bg-transparent !px-4 !py-4 text-left !text-base !font-medium !text-slate-700 shadow-none transition hover:!bg-slate-100 dark:!text-slate-300 dark:hover:!bg-slate-800"
                             >
-                                <Plus size={16} />
                                 Create event
-                            </button>
+                            </CustomButton>
 
-                            <button
+                            <CustomButton
+                                variant="secondary"
+                                fullWidth
                                 onClick={() => navigate('/gate-check-in')}
-                                className="flex shrink-0 items-center gap-3 rounded-lg px-3 py-3 text-left text-xs font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                                icon={<Check size={17} />}
+                                className="!flex !min-h-[62px] !w-full !flex-row !items-center !justify-start !gap-4 !rounded-lg !border-l-4 !border-transparent !bg-transparent !px-4 !py-4 text-left !text-base !font-medium !text-slate-700 shadow-none transition hover:!bg-slate-100 dark:!text-slate-300 dark:hover:!bg-slate-800"
                             >
-                                <ScanLine size={16} />
                                 Gate check-in
-                            </button>
+                            </CustomButton>
 
-                            <button
+                            <CustomButton
+                                variant="secondary"
+                                fullWidth
                                 onClick={() => navigate('/gate-staff')}
-                                className="flex shrink-0 items-center gap-3 rounded-lg px-3 py-3 text-left text-xs font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                                icon={<Users size={17} />}
+                                className="!flex !min-h-[62px] !w-full !flex-row !items-center !justify-start !gap-4 !rounded-lg !border-l-4 !border-transparent !bg-transparent !px-4 !py-4 text-left !text-base !font-medium !text-slate-700 shadow-none transition hover:!bg-slate-100 dark:!text-slate-300 dark:hover:!bg-slate-800"
                             >
-                                <Users size={16} />
                                 Gate staff
-                            </button>
+                            </CustomButton>
                         </nav>
                     </div>
+
+                    
                 </aside>
 
                 {/* DASHBOARD CONTENT */}
                 <main className="min-w-0 flex-1">
                     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-                        {/* BREADCRUMB AND EVENT HEADER */}
+
+                        {/* EVENT HEADER */}
                         <div className="mb-5">
                             <div className="mb-3 flex items-center gap-2 text-[10px] text-muted-foreground">
                                 <button
@@ -234,51 +484,54 @@ export default function OrganiserEventsDashboard() {
                                 >
                                     My events
                                 </button>
+
                                 <ChevronRight size={12} />
-                                <span>{event.name}</span>
+                                <span>{event.title}</span>
                             </div>
 
                             <div className="flex flex-col justify-between gap-4 xl:flex-row xl:items-center">
                                 <div>
                                     <div className="flex flex-wrap items-center gap-2">
                                         <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
-                                            {event.name}
+                                            {event.title}
                                         </h1>
-                                        <span className="rounded bg-ticket-warning-bg px-2 py-1 text-[9px] font-extrabold text-ticket-warning-fg">
-                                            {event.status}
+
+                                        <span className="rounded bg-emerald-100 px-2 py-1 text-[9px] font-extrabold text-emerald-700">
+                                            {eventStatus}
                                         </span>
                                     </div>
 
                                     <p className="mt-2 text-xs text-muted-foreground">
-                                        {event.date} · {event.time} ·{' '}
-                                        {event.venue}
+                                        {formatDate(event.start_date)}
+                                        {formatTime(event.start_date) &&
+                                            ` · ${formatTime(event.start_date)}`}
+                                        {' · '}
+                                        {event.venue}, {event.city}
                                     </p>
+                                    <p className="mt-1 text-[10px] text-muted-foreground">
+    {formatCategory(event.category)}
+</p>
                                 </div>
 
                                 <div className="flex flex-wrap items-center gap-2">
-                                    <span className="mr-1 text-[10px] text-muted-foreground">
-                                        <span className="mr-1 text-homeText">
-                                            ●
-                                        </span>
-                                        {''}
-                                        Updated 2 min ago
+                                    <span className="mr-2 text-[10px] text-muted-foreground">
+                                        <span className="mr-1 inline-block h-2 w-2 rounded-full bg-emerald-500" />
+                                        Event details loaded
                                     </span>
 
                                     <button
-                                        onClick={() =>
-                                            navigate(
-                                                `/organisers/events/${event.id}/edit`
-                                            )
-                                        }
+                                                                                                 onClick={() =>
+        navigate('/organisers/create-event', {
+            state: { event },
+        })
+    }
                                         className={`rounded-md border px-3 py-2 text-xs font-bold hover:bg-accent ${panelClass}`}
                                     >
                                         Edit event
                                     </button>
 
                                     <button
-                                        onClick={() =>
-                                            navigate('/gate-check-in')
-                                        }
+                                        onClick={() => navigate('/gate-check-in')}
                                         className="inline-flex items-center gap-2 rounded-md bg-headerBackground px-3 py-2 text-xs font-bold text-white hover:opacity-90"
                                     >
                                         <ScanLine size={14} />
@@ -288,234 +541,171 @@ export default function OrganiserEventsDashboard() {
                             </div>
                         </div>
 
-                        {/* STATISTIC CARDS */}
+                        {/* EVENT BANNER */}
+                        {event.banner_image && (
+                            <div className="mb-5 overflow-hidden rounded-lg border border-border">
+                                <img
+                                    src={event.banner_image}
+                                    alt={event.title}
+                                    className="h-48 w-full object-cover sm:h-64"
+                                />
+                            </div>
+                        )}
+
+                        {/* STATISTICS */}
                         <section className="mb-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
                             <div className="rounded-lg border border-headerBackground bg-headerBackground p-4 text-white">
                                 <p className="text-[10px] font-semibold text-white/80">
                                     Tickets sold
                                 </p>
+
                                 <p className="mt-1 text-2xl font-extrabold">
-                                    {event.ticketsSold}
+                                    —
                                     <span className="ml-1 text-sm font-semibold text-white/80">
-                                        / {event.capacity}
+                                        / {totalCapacity.toLocaleString('en-GH')}
                                     </span>
                                 </p>
+
                                 <p className="mt-1 text-[9px] font-bold text-white/80">
-                                    {soldPercentage}% sell-through
+                                    Sales data unavailable
                                 </p>
                             </div>
 
-                            <div
-                                className={`rounded-lg border p-4 ${panelClass}`}
-                            >
+                            <div className={`rounded-lg border p-4 ${panelClass}`}>
                                 <p className="text-[10px] font-medium text-muted-foreground">
                                     Gross revenue
                                 </p>
+
                                 <p className="mt-1 text-xl font-extrabold sm:text-2xl">
-                                    {formatMoney(event.revenue)}
+                                    —
                                 </p>
+
                                 <p className="mt-1 text-[9px] text-muted-foreground">
-                                    Avg order {money(averageOrder)}
+                                    Awaiting sales data
                                 </p>
                             </div>
 
-                            <div
-                                className={`rounded-lg border p-4 ${panelClass}`}
-                            >
+                            <div className={`rounded-lg border p-4 ${panelClass}`}>
                                 <p className="text-[10px] font-medium text-muted-foreground">
                                     Checked in
                                 </p>
+
                                 <p className="mt-1 text-xl font-extrabold sm:text-2xl">
-                                    {event.checkedIn}
-                                    <span className="ml-1 text-sm font-medium text-muted-foreground">
-                                        / {event.ticketsSold}
-                                    </span>
+                                    —
                                 </p>
+
                                 <p className="mt-1 text-[9px] text-muted-foreground">
-                                    {checkedPercentage}% attendance so far
+                                    Check-in data unavailable
                                 </p>
                             </div>
 
-                            <div
-                                className={`rounded-lg border p-4 ${panelClass}`}
-                            >
+                            <div className={`rounded-lg border p-4 ${panelClass}`}>
                                 <p className="text-[10px] font-medium text-muted-foreground">
                                     Tickets left
                                 </p>
+
                                 <p className="mt-1 text-xl font-extrabold sm:text-2xl">
-                                    {event.capacity - event.ticketsSold}
+                                    —
                                 </p>
+
                                 <p className="mt-1 text-[9px] text-muted-foreground">
-                                    VIP: {event.vipCapacity - event.vipSold}{' '}
-                                    left
+                                    Capacity: {totalCapacity.toLocaleString('en-GH')}
                                 </p>
                             </div>
                         </section>
 
-                        {/* CHART AND TICKET TYPE BREAKDOWN */}
+                        {/* SALES CHART AND TICKET TYPES */}
                         <section className="mb-5 grid grid-cols-1 gap-4 xl:grid-cols-5">
+
                             {/* SALES CHART */}
-                            <div
-                                className={`rounded-lg border p-4 xl:col-span-3 ${panelClass}`}
-                            >
+                            <div className={`rounded-lg border p-4 xl:col-span-3 ${panelClass}`}>
                                 <div className="mb-4 flex items-start justify-between">
                                     <div>
                                         <h2 className="text-sm font-extrabold">
                                             Tickets sold per day
                                         </h2>
+
                                         <p className="mt-1 text-[10px] text-muted-foreground">
-                                            Last 14 days
-                                        </p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-[9px] text-muted-foreground">
-                                            13 Nov
-                                        </p>
-                                        <p className="text-sm font-extrabold">
-                                            52 tickets
+                                            Daily ticket sales
                                         </p>
                                     </div>
                                 </div>
 
-                                <div className="relative">
-                                    <div className="absolute inset-0 flex flex-col justify-between pb-7 pt-1">
-                                        {[60, 40, 20, 0].map((number) => (
-                                            <div
-                                                key={number}
-                                                className="flex items-center gap-2"
-                                            >
-                                                <span className="w-4 text-right text-[9px] text-muted-foreground">
-                                                    {number}
-                                                </span>
-                                                <div className="h-px flex-1 border-t border-dashed border-border" />
-                                            </div>
-                                        ))}
-                                    </div>
+                                <div className="flex min-h-48 flex-col items-center justify-center rounded-md bg-muted/30 px-4 text-center">
+                                    <CalendarDays
+                                        size={28}
+                                        className="text-muted-foreground"
+                                    />
 
-                                    <div className="relative ml-6 flex h-48 items-end justify-between gap-1 px-1 pb-7 pt-2">
-                                        {salesData.map((value, index) => (
-                                            <div
-                                                key={index}
-                                                className="flex h-full flex-1 items-end"
-                                            >
-                                                <div
-                                                    title={`${value} tickets`}
-                                                    className={`w-full rounded-t-sm transition hover:opacity-80 ${
-                                                        index === 12
-                                                            ? 'bg-homeText'
-                                                            : 'bg-headerBackground'
-                                                    }`}
-                                                    style={{
-                                                        height: `${(value / 60) * 100}%`,
-                                                    }}
-                                                />
-                                            </div>
-                                        ))}
-                                        <div className="absolute bottom-0 left-0 right-0 ml-0 flex justify-between pl-0 text-[9px] text-muted-foreground">
-                                            {salesData.map((_, index) => (
-                                                <span
-                                                    key={index}
-                                                    className="flex-1 text-center"
-                                                >
-                                                    {index % 2 === 0
-                                                        ? index + 1
-                                                        : ''}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </div>
+                                    <p className="mt-3 text-xs font-bold">
+                                        No sales analytics available
+                                    </p>
+
+                                    <p className="mt-1 max-w-xs text-[10px] text-muted-foreground">
+                                        The daily sales chart will appear here
+                                        once the backend provides ticket sales
+                                        statistics.
+                                    </p>
                                 </div>
                             </div>
 
-                            {/* SALES BY TICKET TYPE */}
-                            <div
-                                className={`rounded-lg border p-4 xl:col-span-2 ${panelClass}`}
-                            >
-                                <h2 className="mb-4 text-sm font-extrabold">
+                            {/* TICKET TYPE BREAKDOWN */}
+                            <div className={`rounded-lg border p-4 xl:col-span-2 ${panelClass}`}>
+                                <h2 className="mb-1 text-sm font-extrabold">
                                     Sales by ticket type
                                 </h2>
 
-                                <div className="mb-5">
-                                    <div className="mb-2 flex items-center justify-between gap-2">
-                                        <p className="text-xs font-extrabold">
-                                            Regular · GHS 40
-                                        </p>
-                                        <p className="text-[10px] font-semibold">
-                                            {event.regularSold} /{' '}
-                                            {event.regularCapacity}
-                                        </p>
-                                    </div>
+                                <p className="mb-5 text-[10px] text-muted-foreground">
+                                    Ticket types and available capacity
+                                </p>
 
-                                    <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                                {ticketTypes.length > 0 ? (
+                                    ticketTypes.map((ticket) => (
                                         <div
-                                            className="h-full rounded-full bg-headerBackground"
-                                            style={{
-                                                width: `${(event.regularSold / event.regularCapacity) * 100}%`,
-                                            }}
-                                        />
-                                    </div>
+                                            key={ticket.id ?? ticket.name}
+                                            className="mb-5 last:mb-0"
+                                        >
+                                            <div className="mb-2 flex items-center justify-between gap-2">
+                                                <p className="text-xs font-extrabold">
+                                                    {ticket.name.replace(/_/g, ' ')}
+                                                    {' · '}
+                                                    {money(Number(ticket.price))}
+                                                </p>
 
-                                    <p className="mt-2 text-[9px] text-muted-foreground">
-                                        {formatMoney(event.regularRevenue)}{' '}
-                                        revenue ·{' '}
-                                        {Math.round(
-                                            (event.regularSold /
-                                                event.regularCapacity) *
-                                                100
-                                        )}
-                                        % sold
+                                                <p className="text-[10px] font-semibold">
+                                                    {Number(ticket.quantity).toLocaleString('en-GH')}
+                                                </p>
+                                            </div>
+
+                                            <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                                                <div className="h-full w-full rounded-full bg-emerald-600/30" />
+                                            </div>
+
+                                            <p className="mt-2 text-[9px] text-muted-foreground">
+                                                {Number(ticket.quantity).toLocaleString('en-GH')} total capacity · Sales data unavailable
+                                            </p>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p className="py-8 text-center text-xs text-muted-foreground">
+                                        No ticket types have been added.
                                     </p>
-                                </div>
-
-                                <div className="mb-5">
-                                    <div className="mb-2 flex items-center justify-between gap-2">
-                                        <p className="text-xs font-extrabold">
-                                            VIP · GHS 100
-                                        </p>
-                                        <p className="text-[10px] font-semibold">
-                                            {event.vipSold} /{' '}
-                                            {event.vipCapacity}
-                                        </p>
-                                    </div>
-
-                                    <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                                        <div
-                                            className="h-full rounded-full bg-headerBackground"
-                                            style={{
-                                                width: `${(event.vipSold / event.vipCapacity) * 100}%`,
-                                            }}
-                                        />
-                                    </div>
-
-                                    <p className="mt-2 text-[9px] text-muted-foreground">
-                                        {formatMoney(event.vipRevenue)} revenue
-                                        ·{' '}
-                                        {Math.round(
-                                            (event.vipSold /
-                                                event.vipCapacity) *
-                                                100
-                                        )}
-                                        % sold
-                                    </p>
-                                </div>
-
-                                <CustomAlert
-                                    type="primary"
-                                    description=" VIP is close to selling out. You can add
-                                    more VIP tickets from Edit event."
-                                    className="rounded-md bg-ticket-warning-bg p-3 text-[10px] leading-relaxed text-ticket-warning-fg"
-                                />
+                                )}
                             </div>
                         </section>
 
                         {/* RECENT ORDERS */}
-                        <section
-                            className={`overflow-hidden rounded-lg border ${panelClass}`}
-                        >
+                        <section className={`overflow-hidden rounded-lg border ${panelClass}`}>
                             <div className="flex items-center justify-between border-b border-inherit px-4 py-4">
-                                <h2 className="text-sm font-extrabold">
-                                    Recent orders
-                                </h2>
+                                <div>
+                                    <h2 className="text-sm font-extrabold">
+                                        Recent orders
+                                    </h2>
+
+                                    <p className="mt-1 text-[10px] text-muted-foreground">
+                                        Orders for this event
+                                    </p>
+                                </div>
 
                                 <button
                                     onClick={exportOrders}
@@ -526,77 +716,70 @@ export default function OrganiserEventsDashboard() {
                                 </button>
                             </div>
 
-                            <div className="overflow-x-auto">
-                                <table className="w-full min-w-162.5 text-left">
-                                    <thead>
-                                        <tr className="bg-muted text-[9px] font-bold uppercase text-muted-foreground">
-                                            <th className="px-4 py-3">Order</th>
-                                            <th className="px-4 py-3">Buyer</th>
-                                            <th className="px-4 py-3">
-                                                Tickets
-                                            </th>
-                                            <th className="px-4 py-3">Total</th>
-                                            <th className="px-4 py-3">
-                                                Status
-                                            </th>
-                                        </tr>
-                                    </thead>
-
-                                    <tbody>
-                                        {orders.map((order) => (
-                                            <tr
-                                                key={order.id}
-                                                className="border-t border-inherit text-[10px]"
-                                            >
-                                                <td className="px-4 py-3 font-semibold">
-                                                    {order.id}
-                                                </td>
-                                                <td className="px-4 py-3 text-muted-foreground">
-                                                    {order.buyer}
-                                                </td>
-                                                <td className="px-4 py-3 text-muted-foreground">
-                                                    {order.tickets}
-                                                </td>
-                                                <td className="px-4 py-3 font-medium">
-                                                    {money(order.total)}
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    {order.status === 'Paid' ? (
-                                                        <span className="inline-flex items-center gap-1 font-bold text-homeText">
-                                                            <span>●</span> Paid
-                                                        </span>
-                                                    ) : order.status ===
-                                                      'Held' ? (
-                                                        <span className="font-semibold text-muted-foreground">
-                                                            ● Held · 6 min left
-                                                        </span>
-                                                    ) : (
-                                                        <span className="font-bold text-destructive">
-                                                            ● Payment failed
-                                                        </span>
-                                                    )}
-                                                </td>
+                            {orders.length > 0 ? (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full min-w-[650px] text-left">
+                                        <thead>
+                                            <tr className="bg-muted text-[9px] font-bold uppercase text-muted-foreground">
+                                                <th className="px-4 py-3">Order</th>
+                                                <th className="px-4 py-3">Buyer</th>
+                                                <th className="px-4 py-3">Tickets</th>
+                                                <th className="px-4 py-3">Total</th>
+                                                <th className="px-4 py-3">Status</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                                        </thead>
+
+                                        <tbody>
+                                            {orders.map((order) => (
+                                                <tr
+                                                    key={order.id}
+                                                    className="border-t border-inherit text-[10px]"
+                                                >
+                                                    <td className="px-4 py-3 font-semibold">
+                                                        {order.id}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-muted-foreground">
+                                                        {order.buyer}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-muted-foreground">
+                                                        {order.tickets}
+                                                    </td>
+                                                    <td className="px-4 py-3 font-medium">
+                                                        {money(order.total)}
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        {order.status}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center px-4 py-12 text-center">
+                                    <CheckCircle2
+                                        size={28}
+                                        className="text-muted-foreground"
+                                    />
+
+                                    <p className="mt-3 text-xs font-bold">
+                                        No orders available
+                                    </p>
+
+                                    <p className="mt-1 text-[10px] text-muted-foreground">
+                                        Customer orders will appear here when
+                                        the orders API is connected.
+                                    </p>
+                                </div>
+                            )}
 
                             <div className="border-t border-border px-4 py-3 text-[10px] text-muted-foreground">
-                                Showing {totalOrders} recent orders
+                                Showing {orders.length} recent orders
                             </div>
                         </section>
                     </div>
                 </main>
             </div>
-
-            {/* NOTIFICATION */}
-            {notice && (
-                <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-lg bg-foreground px-4 py-3 text-xs font-semibold text-background shadow-xl">
-                    <CheckCircle2 size={16} className="text-homeText" />
-                    {notice}
-                </div>
-            )}
         </div>
     )
 }

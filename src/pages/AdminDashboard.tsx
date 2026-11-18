@@ -1,3 +1,4 @@
+
 import {
     Table,
     TableBody,
@@ -19,13 +20,19 @@ import {
     useTable,
     type SortingState,
 } from '@tanstack/react-table'
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { CustomButton } from '../components/Button/custom-button'
-import {
-    mockOrganisers,
-    type OrganiserRequest,
-    type OrganiserStatus,
-} from '../mock/mock-user'
+import { apiClient } from '../api/axios'
+
+type OrganiserStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
+
+type OrganiserRequest = {
+    id: number | string
+    organization_name: string
+    reason: string
+    status: OrganiserStatus
+    created_at: string
+}
 
 const adminTableFeatures = tableFeatures({
     columnFilteringFeature,
@@ -45,39 +52,181 @@ const columnHelper = createColumnHelper<
 const getInitials = (name: string) => {
     return name
         .split(' ')
+        .filter(Boolean)
         .map((part) => part[0])
         .join('')
         .substring(0, 2)
         .toUpperCase()
 }
 
-export default function AdminDashboard() {
-    const [data, setData] = useState<OrganiserRequest[]>(mockOrganisers)
-    const [activeTab, setActiveTab] = useState<OrganiserStatus>('PENDING')
-    const [sorting, setSorting] = useState<SortingState>([])
+const formatDate = (date: string) => {
+    if (!date) return '—'
 
-    const handleStatusChange = (id: string, newStatus: OrganiserStatus) => {
-        setData((currentData) =>
-            currentData.map((item) =>
-                item.id === id ? { ...item, status: newStatus } : item
-            )
-        )
+    const parsedDate = new Date(date)
+
+    if (Number.isNaN(parsedDate.getTime())) return '—'
+
+    return parsedDate.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+    })
+}
+
+const extractApplications = (response: unknown): OrganiserRequest[] => {
+    if (Array.isArray(response)) {
+        return response as OrganiserRequest[]
     }
 
-    // Filter table data based on active tab
-    const filteredData = useMemo(() => {
-        return data.filter((item) => item.status === activeTab)
-    }, [data, activeTab])
+    if (!response || typeof response !== 'object') {
+        return []
+    }
 
-    // Count statistics for tab badges
+    const result = response as {
+        applications?: OrganiserRequest[]
+        results?: OrganiserRequest[]
+        data?: OrganiserRequest[]
+        application?: OrganiserRequest
+    }
+
+    if (Array.isArray(result.applications)) {
+        return result.applications
+    }
+
+    if (Array.isArray(result.results)) {
+        return result.results
+    }
+
+    if (Array.isArray(result.data)) {
+        return result.data
+    }
+
+    if (result.application) {
+        return [result.application]
+    }
+
+    return []
+}
+
+export default function AdminDashboard() {
+    const [data, setData] = useState<OrganiserRequest[]>([])
+    const [activeTab, setActiveTab] = useState<OrganiserStatus>('PENDING')
+    const [sorting, setSorting] = useState<SortingState>([])
+    const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState('')
+    const [notice, setNotice] = useState('')
+    const [reviewingId, setReviewingId] = useState<string | null>(null)
+
+    // Fetch organizer applications
+   const loadApplications = useCallback(async () => {
+    try {
+        const response = await apiClient.get(
+            '/auth/admin/organizer-applications/'
+        )
+
+        const applications = extractApplications(response.data)
+
+        setData(applications)
+        setError('')
+    } catch (err) {
+        console.error('Failed to fetch organizer applications:', err)
+        setError('Unable to load organizer applications. Please try again.')
+    } finally {
+        setIsLoading(false)
+    }
+}, [])
+
+useEffect(() => {
+    let isMounted = true
+
+    const load = async () => {
+        try {
+            const response = await apiClient.get(
+                '/auth/admin/organizer-applications/'
+            )
+
+            if (!isMounted) return
+
+            setData(extractApplications(response.data))
+            setError('')
+        } catch (err) {
+            if (!isMounted) return
+
+            console.error('Failed to fetch organizer applications:', err)
+            setError('Unable to load organizer applications. Please try again.')
+        } finally {
+            if (isMounted) {
+                setIsLoading(false)
+            }
+        }
+    }
+
+    void load()
+
+    return () => {
+        isMounted = false
+    }
+}, [])
+
+    // Approve or reject an application
+    const handleStatusChange = async (
+        id: number | string,
+        newStatus: OrganiserStatus
+    ) => {
+        const confirmed = window.confirm(
+            `Are you sure you want to ${newStatus.toLowerCase()} this organizer application?`
+        )
+
+        if (!confirmed) return
+
+        setReviewingId(String(id))
+        setError('')
+        setNotice('')
+
+        try {
+            await apiClient.patch(
+                `/auth/admin/organizer-applications/${id}/review/`,
+                {
+                    status: newStatus,
+                }
+            )
+
+            setData((currentData) =>
+                currentData.map((item) =>
+                    String(item.id) === String(id)
+                        ? { ...item, status: newStatus }
+                        : item
+                )
+            )
+
+            setNotice(
+                `Organizer application ${newStatus.toLowerCase()} successfully.`
+            )
+        } catch (err) {
+            console.error('Failed to review organizer application:', err)
+            setError(
+                `Failed to ${newStatus.toLowerCase()} this application. Please try again.`
+            )
+        } finally {
+            setReviewingId(null)
+        }
+    }
+
+    const filteredData = useMemo(
+        () => data.filter((item) => item.status === activeTab),
+        [data, activeTab]
+    )
+
     const pendingCount = useMemo(
         () => data.filter((item) => item.status === 'PENDING').length,
         [data]
     )
+
     const approvedCount = useMemo(
         () => data.filter((item) => item.status === 'APPROVED').length,
         [data]
     )
+
     const rejectedCount = useMemo(
         () => data.filter((item) => item.status === 'REJECTED').length,
         [data]
@@ -86,90 +235,105 @@ export default function AdminDashboard() {
     const columns = useMemo(
         () =>
             columnHelper.columns([
-                columnHelper.accessor('name', {
+                columnHelper.accessor('organization_name', {
                     header: 'ORGANISER',
                     cell: (info) => {
-                        const name = info.getValue()
-                        const category = info.row.original.category
+                        const name = info.getValue() || 'Unnamed organisation'
                         const initials = getInitials(name)
+
                         return (
                             <div className="flex items-center gap-3 py-1">
                                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 font-bold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                                    {initials}
+                                    {initials || 'O'}
                                 </div>
-                                <div className="flex flex-col">
+
+                                <div className="flex min-w-0 flex-col">
                                     <span className="font-bold text-foreground">
                                         {name}
                                     </span>
-                                    <span className="text-xs text-muted-foreground">
-                                        {category}
+                                    <span className="max-w-xs truncate text-xs text-muted-foreground">
+                                        {info.row.original.reason || 'No reason provided'}
                                     </span>
                                 </div>
                             </div>
                         )
                     },
                 }),
-                columnHelper.accessor('contactName', {
-                    header: 'CONTACT',
-                    cell: (info) => {
-                        const contact = info.getValue()
-                        const email = info.row.original.email
-                        return (
-                            <div className="flex flex-col">
-                                <span className="font-medium text-foreground">
-                                    {contact}
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                    {email}
-                                </span>
-                            </div>
-                        )
-                    },
-                }),
-                columnHelper.accessor('appliedDate', {
+
+               
+
+                columnHelper.accessor('created_at', {
                     header: 'APPLIED',
                     cell: (info) => (
                         <span className="text-sm text-muted-foreground">
-                            {info.getValue()}
+                            {formatDate(info.getValue())}
                         </span>
                     ),
                 }),
-                columnHelper.accessor('drafts', {
-                    header: 'DRAFTS',
-                    cell: (info) => (
-                        <span className="text-sm text-muted-foreground">
-                            {info.getValue()}
+
+                 columnHelper.accessor('reason', {
+                    header: 'DRAFT',
+                    cell: () => (
+                        <span className="block max-w-sm text-sm text-muted-foreground">
+                           
                         </span>
                     ),
                 }),
+
+                columnHelper.accessor('status', {
+                    header: 'STATUS',
+                    cell: (info) => {
+                        const status = info.getValue()
+
+                        return (
+                            <span
+                                className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${
+                                    status === 'APPROVED'
+                                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                                        : status === 'REJECTED'
+                                          ? 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300'
+                                          : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                                }`}
+                            >
+                                {status}
+                            </span>
+                        )
+                    },
+                }),
+
                 columnHelper.display({
                     id: 'actions',
                     header: () => <div className="text-right">DECISION</div>,
                     cell: ({ row }) => {
                         const item = row.original
+                        const isReviewing = reviewingId === String(item.id)
+
                         return (
                             <div className="flex items-center justify-end gap-2">
-                                {activeTab !== 'REJECTED' && (
+                                {item.status !== 'REJECTED' && (
                                     <CustomButton
                                         variant="secondary"
                                         size="sm"
                                         bordered
                                         rounded
+                                        disabled={isReviewing}
                                         onClick={() =>
                                             handleStatusChange(
                                                 item.id,
                                                 'REJECTED'
                                             )
                                         }
-                                        className=" text-red-600 hover:bg-red-50 border-gray-100  dark:border-red-900/50 dark:bg-transparent dark:text-red-400"
+                                        className="border-gray-100 text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:bg-transparent dark:text-red-400"
                                     >
-                                        Reject
+                                        {isReviewing ? 'Please wait...' : 'Reject'}
                                     </CustomButton>
                                 )}
-                                {activeTab !== 'APPROVED' && (
+
+                                {item.status !== 'APPROVED' && (
                                     <CustomButton
                                         variant="primary"
                                         size="sm"
+                                        disabled={isReviewing}
                                         onClick={() =>
                                             handleStatusChange(
                                                 item.id,
@@ -177,7 +341,7 @@ export default function AdminDashboard() {
                                             )
                                         }
                                     >
-                                        Approve
+                                        {isReviewing ? 'Please wait...' : 'Approve'}
                                     </CustomButton>
                                 )}
                             </div>
@@ -185,7 +349,7 @@ export default function AdminDashboard() {
                     },
                 }),
             ]),
-        [activeTab]
+        [reviewingId, activeTab]
     )
 
     const table = useTable(
@@ -205,19 +369,40 @@ export default function AdminDashboard() {
 
     return (
         <div className="mx-auto max-w-7xl px-4 py-8 md:px-8">
-            {/* Sub-header */}
             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 ORGANISER REQUESTS
             </span>
 
-            {/* Page Heading */}
             <h1 className="mt-1 text-3xl font-black tracking-tight text-foreground md:text-4xl">
                 Approve organisers
             </h1>
+
             <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
                 Only approved organisers can publish events. Check that each
                 request looks like a real person or group before approving.
             </p>
+
+            {error && (
+                <div className="mt-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
+                    {error}
+                  <button
+    type="button"
+    onClick={() => {
+        setIsLoading(true)
+        void loadApplications()
+    }}
+    className="ml-2 font-bold underline"
+>
+    Try again
+</button>
+                </div>
+            )}
+
+            {notice && (
+                <div className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300">
+                    {notice}
+                </div>
+            )}
 
             {/* Status Tabs */}
             <div className="mt-8 flex items-center gap-6 border-b pb-3">
@@ -230,7 +415,7 @@ export default function AdminDashboard() {
                             : 'text-muted-foreground hover:text-foreground'
                     }`}
                 >
-                    Pending{''}
+                    Pending
                     <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-700 px-1.5 text-xs font-bold text-white">
                         {pendingCount}
                     </span>
@@ -280,8 +465,8 @@ export default function AdminDashboard() {
                 </button>
             </div>
 
-            {/* Table Container */}
-            <div className="mt-6 rounded-lg border bg-card shadow-sm">
+            {/* Table */}
+            <div className="mt-6 overflow-x-auto rounded-lg border bg-card shadow-sm">
                 <Table>
                     <TableHeader className="bg-muted/30">
                         {table.getHeaderGroups().map((headerGroup) => (
@@ -291,16 +476,28 @@ export default function AdminDashboard() {
                                         key={header.id}
                                         className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground"
                                     >
-                                        {header.isPlaceholder ? null : (
-                                            <table.FlexRender header={header} />
-                                        )}
+                                        {header.isPlaceholder
+                                            ? null
+                                            : (
+                                                <table.FlexRender header={header} />
+                                            )}
                                     </TableHead>
                                 ))}
                             </TableRow>
                         ))}
                     </TableHeader>
+
                     <TableBody>
-                        {table.getRowModel().rows?.length ? (
+                        {isLoading ? (
+                            <TableRow>
+                                <TableCell
+                                    colSpan={columns.length}
+                                    className="h-32 text-center text-sm text-muted-foreground"
+                                >
+                                    Loading organizer applications...
+                                </TableCell>
+                            </TableRow>
+                        ) : table.getRowModel().rows.length ? (
                             table.getRowModel().rows.map((row) => (
                                 <TableRow key={row.id}>
                                     {row.getAllCells().map((cell) => (
@@ -316,7 +513,7 @@ export default function AdminDashboard() {
                                     colSpan={columns.length}
                                     className="h-32 text-center text-sm text-muted-foreground"
                                 >
-                                    No {activeTab.toLowerCase()} requests found.
+                                    No {activeTab.toLowerCase()} applications found.
                                 </TableCell>
                             </TableRow>
                         )}

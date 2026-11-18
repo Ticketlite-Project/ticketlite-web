@@ -1,16 +1,20 @@
 
-import { useMemo, useRef, useState, type ChangeEvent } from 'react'
+import {
+    useMemo,
+    useRef,
+    useState,
+    type ChangeEvent,
+} from 'react'
 import {
     ArrowLeft,
-    Check,
-    CircleAlert,
     Plus,
     Trash2,
     Upload,
     X,
 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { apiClient } from '../api/axios'
+import { useAuth } from '../context/AuthContext'
 
 type TicketType = {
     id: number
@@ -19,13 +23,18 @@ type TicketType = {
     quantity: string
 }
 
-const categories = [
-    'Music',
-    'Church',
-    'Tech & meetups',
-    'Campus',
-    'Arts & Culture',
-    'Sports',
+type EventCategory = {
+    value: string
+    label: string
+}
+
+const categories: EventCategory[] = [
+    { value: 'MUSIC', label: 'Music' },
+    { value: 'CHURCH', label: 'Church' },
+    { value: 'CAMPUS', label: 'Campus' },
+    { value: 'TECH_MEETUPS', label: 'Tech & Meetups' },
+    { value: 'SPORTS', label: 'Sports' },
+    { value: 'ARTS_CULTURE', label: 'Arts & Culture' },
 ]
 
 const cities = [
@@ -38,6 +47,8 @@ const cities = [
     'Other',
 ]
 
+// Used for city values and ticket type names only.
+// Category values must be submitted exactly as selected.
 const formatApiValue = (value: string) =>
     value
         .trim()
@@ -46,30 +57,80 @@ const formatApiValue = (value: string) =>
         .replace(/[^A-Z0-9]+/g, '_')
         .replace(/^_|_$/g, '')
 
+type EditableEvent = {
+    id: number | string
+    title?: string
+    category?: string
+    city?: string
+    description?: string
+    venue?: string
+    start_date?: string
+    end_date?: string
+    status?: string
+    banner_image?: string | null
+    ticket_types?: Array<{
+        id?: number | string
+        name?: string
+        price?: number | string
+        quantity?: number | string
+    }>
+}
+
+
+
+const toDateTimeLocal = (value?: string) => {
+    if (!value) return ''
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return ''
+    const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+    return local.toISOString().slice(0, 16)
+}
+
+const fromApiCity = (value?: string) => {
+    if (!value) return ''
+    const normalized = value.trim().toLowerCase().replace(/_/g, ' ')
+    return cities.find((city) => city.toLowerCase() === normalized) || value
+}
+
 export default function CreateEvent() {
     const navigate = useNavigate()
+    const location = useLocation()
+
+    const { user, isInitializing } = useAuth()
+
+    const isOrganizerEnabled = user?.role === 'ORGANIZER'
+    const editingEvent = (location.state as { event?: EditableEvent } | null)?.event
+    const isEditing = Boolean(editingEvent?.id)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
-    const [title, setTitle] = useState('')
-    const [category, setCategory] = useState('')
-    const [city, setCity] = useState('')
-    const [description, setDescription] = useState('')
-    const [startDate, setStartDate] = useState('')
-    const [endDate, setEndDate] = useState('')
-    const [venue, setVenue] = useState('')
+    // Initialize the form directly from the selected dashboard record.
+    // This avoids synchronously setting state inside an effect and prevents
+    // an empty form from rendering before the edit data is populated.
+    const [title, setTitle] = useState(() => editingEvent?.title ?? '')
+    const [category, setCategory] = useState(() => editingEvent?.category ?? '')
+    const [city, setCity] = useState(() => fromApiCity(editingEvent?.city))
+    const [description, setDescription] = useState(() => editingEvent?.description ?? '')
+    const [startDate, setStartDate] = useState(() => toDateTimeLocal(editingEvent?.start_date))
+    const [endDate, setEndDate] = useState(() => toDateTimeLocal(editingEvent?.end_date))
+    const [venue, setVenue] = useState(() => editingEvent?.venue ?? '')
 
     const [banner, setBanner] = useState<File | null>(null)
-    const [bannerPreview, setBannerPreview] = useState('')
+    const [bannerPreview, setBannerPreview] = useState(() => editingEvent?.banner_image ?? '')
 
-    const [ticketTypes, setTicketTypes] = useState<TicketType[]>([
-        { id: 1, name: 'Regular', price: '', quantity: '' },
-    ])
+    const [ticketTypes, setTicketTypes] = useState<TicketType[]>(() => {
+        const existingTickets = editingEvent?.ticket_types ?? []
+        return existingTickets.length
+            ? existingTickets.map((ticket, index) => ({
+                id: Number(ticket.id) || index + 1,
+                name: ticket.name ?? '',
+                price: String(ticket.price ?? ''),
+                quantity: String(ticket.quantity ?? ''),
+            }))
+            : [{ id: 1, name: 'Regular', price: '', quantity: '' }]
+    })
 
     const [message, setMessage] = useState('')
     const [isSaving, setIsSaving] = useState(false)
-
-    const isSuccessMessage = message.startsWith('SUCCESS:')
-    const isInfoMessage = message.startsWith('INFO:')
 
     const totalTickets = useMemo(
         () =>
@@ -92,8 +153,6 @@ export default function CreateEvent() {
             Number(ticket.quantity) > 0,
     )
 
-    const basicsComplete =
-        title.trim() !== '' && category !== ''
 
     const dateComplete =
         startDate !== '' &&
@@ -101,7 +160,6 @@ export default function CreateEvent() {
         venue.trim() !== '' &&
         new Date(endDate) > new Date(startDate)
 
-    // The banner image is optional.
     const isFormComplete =
         title.trim() !== '' &&
         category !== '' &&
@@ -110,6 +168,12 @@ export default function CreateEvent() {
         dateComplete &&
         validTicketTypes &&
         totalTickets > 0
+
+    // Publishing requires both an enabled organizer account and a complete form.
+   const canPublish =
+    !isInitializing &&
+    isOrganizerEnabled &&
+    isFormComplete
 
     const updateTicket = (
         id: number,
@@ -143,36 +207,6 @@ export default function CreateEvent() {
         setTicketTypes((current) =>
             current.filter((ticket) => ticket.id !== id),
         )
-    }
-
-    const resetForm = () => {
-        if (bannerPreview) {
-            URL.revokeObjectURL(bannerPreview)
-        }
-
-        setTitle('')
-        setCategory('')
-        setCity('')
-        setDescription('')
-        setStartDate('')
-        setEndDate('')
-        setVenue('')
-
-        setBanner(null)
-        setBannerPreview('')
-
-        setTicketTypes([
-            {
-                id: Date.now(),
-                name: 'Regular',
-                price: '',
-                quantity: '',
-            },
-        ])
-
-        if (fileInputRef.current) {
-            fileInputRef.current.value = ''
-        }
     }
 
     const handleBannerChange = (
@@ -216,214 +250,193 @@ export default function CreateEvent() {
         }
     }
 
-    const handleSubmit = async (publish: boolean) => {
-        setMessage('')
+    const buildCreateFormData = () => {
+    const formData = new FormData()
 
-        if (publish && !isFormComplete) {
-            setMessage(
-                'Please complete all required event details and add at least one valid ticket type before publishing. The banner image is optional.',
-            )
-            return
-        }
+    formData.append('title', title.trim())
+    formData.append('category', category)
+    formData.append('city', formatApiValue(city))
+    formData.append('description', description.trim())
+    formData.append('venue', venue.trim())
+    formData.append('start_date', new Date(startDate).toISOString())
+    formData.append('end_date', new Date(endDate).toISOString())
 
-        if (!title.trim() || !category) {
-            setMessage(
-                'Please enter an event title and select a category.',
-            )
-            return
-        }
-
-        if (!dateComplete) {
-            setMessage(
-                'Please enter valid start and end dates and a venue. The end date must be after the start date.',
-            )
-            return
-        }
-
-        if (!validTicketTypes) {
-            setMessage(
-                'Please complete the name, price and quantity for every ticket type. Quantity must be a whole number greater than zero.',
-            )
-            return
-        }
-
-        // Save draft locally without publishing it to the backend.
-        if (!publish) {
-            const eventData = {
-                title,
-                category,
-                city,
-                description,
-                startDate,
-                endDate,
-                venue,
-                ticketTypes,
-                totalTickets,
-                status: 'draft',
-            }
-
-            setIsSaving(true)
-
-            try {
-                const existingDrafts = JSON.parse(
-                    localStorage.getItem('ticketlite_event_drafts') || '[]',
-                )
-
-                if (!Array.isArray(existingDrafts)) {
-                    throw new Error('Invalid saved drafts.')
-                }
-
-                localStorage.setItem(
-                    'ticketlite_event_drafts',
-                    JSON.stringify([
-                        ...existingDrafts,
-                        {
-                            ...eventData,
-                            bannerName: banner?.name || '',
-                            savedAt: new Date().toISOString(),
-                        },
-                    ]),
-                )
-
-                setMessage(
-                    'INFO: Your event has been saved as a draft on this device. It has not been published to the server.',
-                )
-            } catch {
-                setMessage(
-                    'Unable to save your draft. Please try again.',
-                )
-            } finally {
-                setIsSaving(false)
-            }
-
-            return
-        }
-
-        setIsSaving(true)
-
-        try {
-            const formData = new FormData()
-
-            formData.append('title', title.trim())
-            formData.append('category', formatApiValue(category))
-            formData.append('city', formatApiValue(city))
-            formData.append('description', description.trim())
-            formData.append('venue', venue.trim())
-            formData.append(
-                'start_date',
-                new Date(startDate).toISOString(),
-            )
-            formData.append(
-                'end_date',
-                new Date(endDate).toISOString(),
-            )
-
-            if (banner) {
-                formData.append('banner_image', banner, banner.name)
-            }
-
-            // Submit nested ticket fields in multipart form data.
-            ticketTypes.forEach((ticket, index) => {
-                formData.append(
-                    `ticket_types[${index}]name`,
-                    formatApiValue(ticket.name),
-                )
-                formData.append(
-                    `ticket_types[${index}]price`,
-                    ticket.price.trim(),
-                )
-                formData.append(
-                    `ticket_types[${index}]quantity`,
-                    String(Number(ticket.quantity)),
-                )
-            })
-
-            // Axios sets the multipart boundary automatically.
-            await apiClient.post('/events/create/', formData)
-
-            // Reset only after the backend confirms successful publishing.
-            resetForm()
-
-            setMessage('SUCCESS: Event published successfully!')
-        } catch (error: unknown) {
-            console.error('Event creation failed:', error)
-
-            let errorMessage =
-                'Unable to publish your event. Please try again.'
-
-            if (typeof error === 'object' && error !== null) {
-                const apiError = error as {
-                    response?: {
-                        data?: {
-                            detail?: string
-                            message?: string
-                            error?: string
-                            [key: string]: unknown
-                        }
-                    }
-                    message?: string
-                }
-
-                const responseData = apiError.response?.data
-
-                if (responseData?.detail) {
-                    errorMessage = responseData.detail
-                } else if (responseData?.message) {
-                    errorMessage = responseData.message
-                } else if (responseData?.error) {
-                    errorMessage = responseData.error
-                } else if (responseData) {
-                    errorMessage = Object.entries(responseData)
-                        .map(([field, value]) => {
-                            const readableField = field
-                                .replace(/_/g, ' ')
-                                .replace(/\b\w/g, (letter) =>
-                                    letter.toUpperCase(),
-                                )
-
-                            const readableValue = Array.isArray(value)
-                                ? value.join(', ')
-                                : String(value)
-
-                            return `${readableField}: ${readableValue}`
-                        })
-                        .join(' | ')
-                } else if (apiError.message) {
-                    errorMessage = apiError.message
-                }
-            }
-
-            setMessage(errorMessage)
-        } finally {
-            setIsSaving(false)
-        }
+    if (banner) {
+        formData.append('banner_image', banner, banner.name)
     }
 
-    const checklist = [
-        {
-            label: 'Title and category',
-            complete: basicsComplete,
-            note: basicsComplete ? 'Done' : 'Required',
-        },
-        {
-            label: 'Date, time and venue',
-            complete: dateComplete,
-            note: dateComplete ? 'Done' : 'Required',
-        },
-        {
-            label: 'Banner image',
-            complete: Boolean(banner),
-            note: banner ? 'Done' : 'Optional',
-        },
-        {
-            label: 'At least 1 ticket type',
-            complete: validTicketTypes && totalTickets > 0,
-            note:
-                validTicketTypes && totalTickets > 0
-                    ? 'Done'
-                    : 'Fix ticket details',
-        },
-    ]
+    formData.append(
+        'ticket_types',
+        JSON.stringify(
+            ticketTypes.map((ticket) => ({
+                name: ticket.name.trim().toUpperCase(),
+                price: Number(ticket.price),
+                quantity: Number(ticket.quantity),
+            })),
+        ),
+    )
+
+    return formData
+}
+
+const buildCreatePayload = () => ({
+    title: title.trim(),
+    category,
+    city: formatApiValue(city),
+    description: description.trim(),
+    venue: venue.trim(),
+    start_date: new Date(startDate).toISOString(),
+    end_date: new Date(endDate).toISOString(),
+    ticket_types: ticketTypes.map(ticket => ({
+        name: ticket.name.trim().toUpperCase(),
+        price: Number(ticket.price),
+        quantity: Number(ticket.quantity),
+    })),
+})
+
+
+const buildUpdateFormData = () => {
+    const formData = new FormData()
+
+    formData.append('title', title.trim())
+    formData.append('category', category)
+    formData.append('city', formatApiValue(city))
+    formData.append('description', description.trim())
+    formData.append('venue', venue.trim())
+    formData.append('start_date', new Date(startDate).toISOString())
+    formData.append('end_date', new Date(endDate).toISOString())
+
+    if (banner) {
+        formData.append('banner_image', banner, banner.name)
+    }
+
+    return formData
+}
+
+    const getApiErrorMessage = (error: unknown, fallback: string) => {
+        if (typeof error !== 'object' || error === null) return fallback
+        const apiError = error as {
+            response?: { data?: { detail?: string; message?: string; error?: string } }
+            message?: string
+        }
+        return apiError.response?.data?.detail
+            || apiError.response?.data?.message
+            || apiError.response?.data?.error
+            || apiError.message
+            || fallback
+    }
+
+    const handleSubmit = async (publish: boolean) => {
+    setMessage('')
+
+    if (isInitializing) {
+        setMessage('Please wait while your account is being verified.')
+        return
+    }
+
+    if (publish && !isOrganizerEnabled) {
+        setMessage('Only users with an ORGANIZER role can publish events.')
+        return
+    }
+
+    if (!title.trim() || !category || !city || !description.trim()) {
+        setMessage('Please complete all required event details.')
+        return
+    }
+
+    if (!dateComplete) {
+        setMessage(
+            'Please enter valid start and end dates and a venue. The end date must be after the start date.',
+        )
+        return
+    }
+
+    if (!validTicketTypes) {
+        setMessage(
+            'Please complete the name, price and quantity for every ticket type. Quantity must be a whole number greater than zero.',
+        )
+        return
+    }
+
+    if (publish && !isFormComplete) {
+        setMessage(
+            'Please complete all required event details before publishing.',
+        )
+        return
+    }
+
+    setIsSaving(true)
+
+    try {
+        if (isEditing) {
+            // Update existing event.
+            // EventUpdateSerializer does not accept ticket_types.
+            await apiClient.patch(
+                `/events/${editingEvent!.id}/update/`,
+                buildUpdateFormData(),
+            )
+
+            if (publish) {
+                const status = editingEvent?.status?.toUpperCase()
+
+                if (status !== 'DRAFT') {
+                    setMessage(
+                        'Your event details have been updated. This event is not a draft, so it cannot be published again.',
+                    )
+                    return
+                }
+
+                await apiClient.post(
+                    `/events/${editingEvent!.id}/publish/`,
+                )
+
+                setMessage('Your event has been published successfully.')
+            } else {
+                setMessage('Your event has been updated successfully.')
+            }
+        } else {
+            if (!publish) {
+                setMessage(
+                    'New drafts are currently saved locally. They have not been created on the server.',
+                )
+                return
+            }
+
+            // Create event using EventSerializer.
+            // This request includes ticket_types.
+            if (banner) {
+    await apiClient.post(
+        '/events/create/',
+        buildCreateFormData()
+    )
+} else {
+    await apiClient.post(
+        '/events/create/',
+        buildCreatePayload()
+    )
+}
+
+            setMessage('Your event has been published successfully.')
+        }
+
+        navigate(-1)
+    } catch (error: unknown) {
+        console.error('Event submission failed:', error)
+
+        setMessage(
+            getApiErrorMessage(
+                error,
+                publish
+                    ? 'Unable to publish your event. Please try again.'
+                    : 'Unable to update your event. Please try again.',
+            ),
+        )
+    } finally {
+        setIsSaving(false)
+    }
+}
+
+    
 
     return (
         <main className="min-h-screen bg-[#f5f5f5] text-gray-900">
@@ -441,7 +454,7 @@ export default function CreateEvent() {
                                 My events
                             </span>
                             <span className="block text-lg font-bold">
-                                Create event
+                                {isEditing ? 'Edit event' : 'Create event'}
                             </span>
                         </span>
                     </button>
@@ -457,60 +470,37 @@ export default function CreateEvent() {
                             onClick={() => handleSubmit(false)}
                             className="rounded-md border border-emerald-700 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
                         >
-                            SAVE DRAFT
+                            {isEditing ? 'SAVE DRAFT' : 'SAVE DRAFT'}
                         </button>
 
                         <button
                             type="button"
-                            disabled={isSaving || !isFormComplete}
+                            disabled={isSaving || !canPublish}
                             onClick={() => handleSubmit(true)}
-                            className="rounded-md bg-gray-900 px-4 py-2 text-xs font-bold text-white hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
+                            className="rounded-md bg-gray-900 px-4 py-2 text-xs font-bold text-white hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            {isSaving ? 'PUBLISHING...' : 'PUBLISH'}
+                            {isSaving ? (isEditing ? 'UPDATING...' : 'PUBLISHING...') : 'PUBLISH'}
                         </button>
                     </div>
                 </div>
             </header>
 
             <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-                {/* Notification */}
+                {!isInitializing && !isOrganizerEnabled && (
+                    <div className="mb-5 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                        Your organizer account is not enabled yet. You can complete
+                        the form and save a draft, but publishing will remain
+                        disabled until your account is enabled.
+                    </div>
+                )}
+
                 {message && (
-                    <div
-                        role="alert"
-                        className={`mb-5 flex items-center justify-between gap-3 rounded-lg border p-4 text-sm ${
-                            isSuccessMessage
-                                ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                                : isInfoMessage
-                                  ? 'border-blue-200 bg-blue-50 text-blue-800'
-                                  : 'border-red-200 bg-red-50 text-red-700'
-                        }`}
-                    >
-                        <div className="flex items-center gap-2">
-                            {isSuccessMessage ? (
-                                <Check
-                                    size={19}
-                                    className="shrink-0 text-emerald-600"
-                                />
-                            ) : (
-                                <CircleAlert
-                                    size={19}
-                                    className="shrink-0"
-                                />
-                            )}
-
-                            <span>
-                                {message.replace(
-                                    /^(SUCCESS: |INFO: )/,
-                                    '',
-                                )}
-                            </span>
-                        </div>
-
+                    <div className="mb-5 flex items-start justify-between gap-3 rounded-lg border border-gray-200 bg-white p-4 text-sm">
+                        <span>{message}</span>
                         <button
                             type="button"
                             onClick={() => setMessage('')}
                             aria-label="Dismiss message"
-                            className="shrink-0"
                         >
                             <X size={17} />
                         </button>
@@ -556,12 +546,13 @@ export default function CreateEvent() {
                                             <option value="">
                                                 Select category
                                             </option>
+
                                             {categories.map((item) => (
                                                 <option
-                                                    key={item}
-                                                    value={item}
+                                                    key={item.value}
+                                                    value={item.value}
                                                 >
-                                                    {item}
+                                                    {item.label}
                                                 </option>
                                             ))}
                                         </select>
@@ -581,6 +572,7 @@ export default function CreateEvent() {
                                             <option value="">
                                                 Select city
                                             </option>
+
                                             {cities.map((item) => (
                                                 <option
                                                     key={item}
@@ -694,8 +686,7 @@ export default function CreateEvent() {
                                     </button>
 
                                     <p className="mt-2 text-xs text-gray-500">
-                                        {banner?.name} · This image will be
-                                        uploaded when you publish.
+                                        {banner?.name} · This image will be uploaded when you publish.
                                     </p>
                                 </div>
                             ) : (
@@ -835,84 +826,7 @@ export default function CreateEvent() {
                                 Add ticket type
                             </button>
                         </section>
-
-                        {/* Bottom actions */}
-                        <div className="flex flex-wrap justify-end gap-3 pb-6">
-                            <button
-                                type="button"
-                                onClick={() => handleSubmit(false)}
-                                disabled={isSaving}
-                                className="rounded-md border border-gray-300 bg-white px-5 py-3 text-sm font-bold hover:bg-gray-50 disabled:opacity-50"
-                            >
-                                Save draft
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() => handleSubmit(true)}
-                                disabled={isSaving || !isFormComplete}
-                                className="rounded-md bg-emerald-700 px-5 py-3 text-sm font-bold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-40"
-                            >
-                                {isSaving ? 'Publishing...' : 'Publish event'}
-                            </button>
-                        </div>
                     </div>
-
-                    {/* Publishing checklist */}
-                    <aside className="space-y-4 lg:sticky lg:top-24">
-                        <section className="rounded-lg border border-gray-200 bg-white p-5">
-                            <h2 className="mb-4 text-base font-bold">
-                                Before you publish
-                            </h2>
-
-                            <div className="divide-y divide-gray-100">
-                                {checklist.map((item) => (
-                                    <div
-                                        key={item.label}
-                                        className="flex items-center justify-between gap-3 py-3"
-                                    >
-                                        <div className="flex min-w-0 items-center gap-2">
-                                            {item.complete ? (
-                                                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-white">
-                                                    <Check size={12} />
-                                                </span>
-                                            ) : (
-                                                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500">
-                                                    <CircleAlert size={12} />
-                                                </span>
-                                            )}
-
-                                            <span className="text-xs font-medium">
-                                                {item.label}
-                                            </span>
-                                        </div>
-
-                                        <span className="shrink-0 text-[11px] text-gray-500">
-                                            {item.note}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-
-                            <p className="mt-4 text-xs leading-relaxed text-gray-500">
-                                Published events appear on the public listing.
-                                You can still edit event details after
-                                publishing, but not lower a ticket quantity
-                                below what has already sold.
-                            </p>
-                        </section>
-
-                        <section className="rounded-lg border border-gray-200 bg-white p-5">
-                            <h3 className="mb-2 text-sm font-bold">
-                                Need help?
-                            </h3>
-
-                            <p className="text-xs leading-relaxed text-gray-500">
-                                Make sure your event information, venue and
-                                ticket prices are correct before publishing.
-                            </p>
-                        </section>
-                    </aside>
                 </div>
             </div>
         </main>
