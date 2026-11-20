@@ -11,6 +11,7 @@ import {
     CreateEvent,
     EventDetails,
     EventsDashboard,
+    EventTicketScanner,
     Home,
     Login,
     Logout,
@@ -156,6 +157,16 @@ export const router = createBrowserRouter([
                             </Page>
                         ),
                     },
+                    {
+    path: 'organisers/events/:id/scanner',
+    element: (
+        <ProtectedRoute allowedRoles={['ORGANIZER']}>
+            <Page>
+                <EventTicketScanner />
+            </Page>
+        </ProtectedRoute>
+    ),
+},
                     {
                         path: 'admin',
                         element: (

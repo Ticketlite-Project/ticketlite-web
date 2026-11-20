@@ -30,7 +30,11 @@ export const NotFound = lazy(() => import('../pages/NotFound'))
 
 export const Checkout = lazy(() => import('../pages/CheckoutPage'))
 
+export const EventTicketScanner = lazy(
+    () => import('../pages/EventTicketScanner')
+)
 // Mobile Money Payment component
 export const MobileMoneyPaymentFlow = lazy(
     () => import('../components/MobileMoneyPaymentFlow')
 )
+
