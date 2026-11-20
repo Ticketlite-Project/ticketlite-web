@@ -1,4 +1,3 @@
-
 import {
     CalendarDays,
     Check,
@@ -192,64 +191,65 @@ export default function OrganizerEventsDashboard() {
         }
     }, [])
 
-   useEffect(() => {
-    let cancelled = false
+    useEffect(() => {
+        let cancelled = false
 
-    const loadEvents = async () => {
-        try {
-            const [publishedResult, draftsResult] = await Promise.allSettled([
-                apiClient.get('/events/published/'),
-                apiClient.get('/events/my-events/'),
-            ])
+        const loadEvents = async () => {
+            try {
+                const [publishedResult, draftsResult] =
+                    await Promise.allSettled([
+                        apiClient.get('/events/published/'),
+                        apiClient.get('/events/my-events/'),
+                    ])
 
-            if (cancelled) return
+                if (cancelled) return
 
-            const published =
-                publishedResult.status === 'fulfilled'
-                    ? getEventsFromResponse(publishedResult.value.data)
-                    : []
+                const published =
+                    publishedResult.status === 'fulfilled'
+                        ? getEventsFromResponse(publishedResult.value.data)
+                        : []
 
-            const drafts =
-                draftsResult.status === 'fulfilled'
-                    ? getEventsFromResponse(draftsResult.value.data)
-                    : []
+                const drafts =
+                    draftsResult.status === 'fulfilled'
+                        ? getEventsFromResponse(draftsResult.value.data)
+                        : []
 
-            if (
-                publishedResult.status === 'rejected' &&
-                draftsResult.status === 'rejected'
-            ) {
-                throw publishedResult.reason
-            }
+                if (
+                    publishedResult.status === 'rejected' &&
+                    draftsResult.status === 'rejected'
+                ) {
+                    throw publishedResult.reason
+                }
 
-            const eventMap = new Map<string, OrganizerEvent>()
+                const eventMap = new Map<string, OrganizerEvent>()
 
-            drafts.forEach((item) => {
-                eventMap.set(String(item.id), item)
-            })
+                drafts.forEach((item) => {
+                    eventMap.set(String(item.id), item)
+                })
 
-            published.forEach((item) => {
-                eventMap.set(String(item.id), item)
-            })
+                published.forEach((item) => {
+                    eventMap.set(String(item.id), item)
+                })
 
-            setEvents(Array.from(eventMap.values()))
-            setError('')
-        } catch (err) {
-            if (!cancelled) {
-                setError(getErrorMessage(err))
-            }
-        } finally {
-            if (!cancelled) {
-                setLoading(false)
+                setEvents(Array.from(eventMap.values()))
+                setError('')
+            } catch (err) {
+                if (!cancelled) {
+                    setError(getErrorMessage(err))
+                }
+            } finally {
+                if (!cancelled) {
+                    setLoading(false)
+                }
             }
         }
-    }
 
-    void loadEvents()
+        void loadEvents()
 
-    return () => {
-        cancelled = true
-    }
-}, [])
+        return () => {
+            cancelled = true
+        }
+    }, [])
 
     const event = useMemo(() => {
         if (id) {
@@ -273,13 +273,16 @@ export default function OrganizerEventsDashboard() {
     const exportOrders = () => {
         const header = ['Order', 'Buyer', 'Tickets', 'Total', 'Status']
 
-        const csv = [header, ...orders.map((order) => [
-            order.id,
-            order.buyer,
-            order.tickets,
-            order.total,
-            order.status,
-        ])]
+        const csv = [
+            header,
+            ...orders.map((order) => [
+                order.id,
+                order.buyer,
+                order.tickets,
+                order.total,
+                order.status,
+            ]),
+        ]
             .map((row) =>
                 row
                     .map((value) => `"${String(value).replace(/"/g, '""')}"`)
@@ -300,7 +303,6 @@ export default function OrganizerEventsDashboard() {
 
         URL.revokeObjectURL(url)
     }
-
 
     if (loading) {
         return (
@@ -353,9 +355,7 @@ export default function OrganizerEventsDashboard() {
                     <Ticket size={30} className="text-muted-foreground" />
                 </div>
 
-                <h2 className="mt-5 text-xl font-extrabold">
-                    No events yet
-                </h2>
+                <h2 className="mt-5 text-xl font-extrabold">No events yet</h2>
 
                 <p className="mt-2 max-w-sm text-sm text-muted-foreground">
                     Events you create will appear here.
@@ -400,14 +400,12 @@ export default function OrganizerEventsDashboard() {
     }
 
     const eventStatus = event.status?.toUpperCase() || 'PUBLISHED'
-const panelTheme = 'border-border bg-card text-card-foreground'
+    const panelTheme = 'border-border bg-card text-card-foreground'
 
     return (
         <div className="min-h-screen bg-background text-foreground">
             <div className="flex min-h-screen flex-col md:flex-row">
-
-               
-  {/* SIDEBAR */}
+                {/* SIDEBAR */}
                 <aside
                     className={`flex w-full flex-col border-r md:sticky md:top-0 md:h-screen md:w-56 md:shrink-0 ${panelTheme}`}
                 >
@@ -439,7 +437,9 @@ const panelTheme = 'border-border bg-card text-card-foreground'
                             <CustomButton
                                 variant="secondary"
                                 fullWidth
-                                onClick={() => navigate('/organisers/create-event')}
+                                onClick={() =>
+                                    navigate('/organisers/create-event')
+                                }
                                 icon={<Plus size={17} />}
                                 className="!flex !min-h-[62px] !w-full !flex-row !items-center !justify-start !gap-4 !rounded-lg !border-l-4 !border-transparent !bg-transparent !px-4 !py-4 text-left !text-base !font-medium !text-slate-700 shadow-none transition hover:!bg-slate-100 dark:!text-slate-300 dark:hover:!bg-slate-800"
                             >
@@ -467,14 +467,11 @@ const panelTheme = 'border-border bg-card text-card-foreground'
                             </CustomButton>
                         </nav>
                     </div>
-
-                    
                 </aside>
 
                 {/* DASHBOARD CONTENT */}
                 <main className="min-w-0 flex-1">
                     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-
                         {/* EVENT HEADER */}
                         <div className="mb-5">
                             <div className="mb-3 flex items-center gap-2 text-[10px] text-muted-foreground">
@@ -509,8 +506,8 @@ const panelTheme = 'border-border bg-card text-card-foreground'
                                         {event.venue}, {event.city}
                                     </p>
                                     <p className="mt-1 text-[10px] text-muted-foreground">
-    {formatCategory(event.category)}
-</p>
+                                        {formatCategory(event.category)}
+                                    </p>
                                 </div>
 
                                 <div className="flex flex-wrap items-center gap-2">
@@ -520,18 +517,25 @@ const panelTheme = 'border-border bg-card text-card-foreground'
                                     </span>
 
                                     <button
-                                                                                                 onClick={() =>
-        navigate('/organisers/create-event', {
-            state: { event },
-        })
-    }
+                                        onClick={() =>
+                                            navigate(
+                                                '/organisers/create-event',
+                                                {
+                                                    state: { event },
+                                                }
+                                            )
+                                        }
                                         className={`rounded-md border px-3 py-2 text-xs font-bold hover:bg-accent ${panelClass}`}
                                     >
                                         Edit event
                                     </button>
 
                                     <button
-                                        onClick={() => navigate('/gate-check-in')}
+                                        onClick={() =>
+                                            navigate(
+                                                `/organisers/events/${event.id}/scanner`
+                                            )
+                                        }
                                         className="inline-flex items-center gap-2 rounded-md bg-headerBackground px-3 py-2 text-xs font-bold text-white hover:opacity-90"
                                     >
                                         <ScanLine size={14} />
@@ -562,7 +566,8 @@ const panelTheme = 'border-border bg-card text-card-foreground'
                                 <p className="mt-1 text-2xl font-extrabold">
                                     —
                                     <span className="ml-1 text-sm font-semibold text-white/80">
-                                        / {totalCapacity.toLocaleString('en-GH')}
+                                        /{' '}
+                                        {totalCapacity.toLocaleString('en-GH')}
                                     </span>
                                 </p>
 
@@ -571,7 +576,9 @@ const panelTheme = 'border-border bg-card text-card-foreground'
                                 </p>
                             </div>
 
-                            <div className={`rounded-lg border p-4 ${panelClass}`}>
+                            <div
+                                className={`rounded-lg border p-4 ${panelClass}`}
+                            >
                                 <p className="text-[10px] font-medium text-muted-foreground">
                                     Gross revenue
                                 </p>
@@ -585,7 +592,9 @@ const panelTheme = 'border-border bg-card text-card-foreground'
                                 </p>
                             </div>
 
-                            <div className={`rounded-lg border p-4 ${panelClass}`}>
+                            <div
+                                className={`rounded-lg border p-4 ${panelClass}`}
+                            >
                                 <p className="text-[10px] font-medium text-muted-foreground">
                                     Checked in
                                 </p>
@@ -599,7 +608,9 @@ const panelTheme = 'border-border bg-card text-card-foreground'
                                 </p>
                             </div>
 
-                            <div className={`rounded-lg border p-4 ${panelClass}`}>
+                            <div
+                                className={`rounded-lg border p-4 ${panelClass}`}
+                            >
                                 <p className="text-[10px] font-medium text-muted-foreground">
                                     Tickets left
                                 </p>
@@ -609,16 +620,18 @@ const panelTheme = 'border-border bg-card text-card-foreground'
                                 </p>
 
                                 <p className="mt-1 text-[9px] text-muted-foreground">
-                                    Capacity: {totalCapacity.toLocaleString('en-GH')}
+                                    Capacity:{' '}
+                                    {totalCapacity.toLocaleString('en-GH')}
                                 </p>
                             </div>
                         </section>
 
                         {/* SALES CHART AND TICKET TYPES */}
                         <section className="mb-5 grid grid-cols-1 gap-4 xl:grid-cols-5">
-
                             {/* SALES CHART */}
-                            <div className={`rounded-lg border p-4 xl:col-span-3 ${panelClass}`}>
+                            <div
+                                className={`rounded-lg border p-4 xl:col-span-3 ${panelClass}`}
+                            >
                                 <div className="mb-4 flex items-start justify-between">
                                     <div>
                                         <h2 className="text-sm font-extrabold">
@@ -650,7 +663,9 @@ const panelTheme = 'border-border bg-card text-card-foreground'
                             </div>
 
                             {/* TICKET TYPE BREAKDOWN */}
-                            <div className={`rounded-lg border p-4 xl:col-span-2 ${panelClass}`}>
+                            <div
+                                className={`rounded-lg border p-4 xl:col-span-2 ${panelClass}`}
+                            >
                                 <h2 className="mb-1 text-sm font-extrabold">
                                     Sales by ticket type
                                 </h2>
@@ -667,13 +682,20 @@ const panelTheme = 'border-border bg-card text-card-foreground'
                                         >
                                             <div className="mb-2 flex items-center justify-between gap-2">
                                                 <p className="text-xs font-extrabold">
-                                                    {ticket.name.replace(/_/g, ' ')}
+                                                    {ticket.name.replace(
+                                                        /_/g,
+                                                        ' '
+                                                    )}
                                                     {' · '}
-                                                    {money(Number(ticket.price))}
+                                                    {money(
+                                                        Number(ticket.price)
+                                                    )}
                                                 </p>
 
                                                 <p className="text-[10px] font-semibold">
-                                                    {Number(ticket.quantity).toLocaleString('en-GH')}
+                                                    {Number(
+                                                        ticket.quantity
+                                                    ).toLocaleString('en-GH')}
                                                 </p>
                                             </div>
 
@@ -682,7 +704,11 @@ const panelTheme = 'border-border bg-card text-card-foreground'
                                             </div>
 
                                             <p className="mt-2 text-[9px] text-muted-foreground">
-                                                {Number(ticket.quantity).toLocaleString('en-GH')} total capacity · Sales data unavailable
+                                                {Number(
+                                                    ticket.quantity
+                                                ).toLocaleString('en-GH')}{' '}
+                                                total capacity · Sales data
+                                                unavailable
                                             </p>
                                         </div>
                                     ))
@@ -695,7 +721,9 @@ const panelTheme = 'border-border bg-card text-card-foreground'
                         </section>
 
                         {/* RECENT ORDERS */}
-                        <section className={`overflow-hidden rounded-lg border ${panelClass}`}>
+                        <section
+                            className={`overflow-hidden rounded-lg border ${panelClass}`}
+                        >
                             <div className="flex items-center justify-between border-b border-inherit px-4 py-4">
                                 <div>
                                     <h2 className="text-sm font-extrabold">
@@ -721,11 +749,21 @@ const panelTheme = 'border-border bg-card text-card-foreground'
                                     <table className="w-full min-w-[650px] text-left">
                                         <thead>
                                             <tr className="bg-muted text-[9px] font-bold uppercase text-muted-foreground">
-                                                <th className="px-4 py-3">Order</th>
-                                                <th className="px-4 py-3">Buyer</th>
-                                                <th className="px-4 py-3">Tickets</th>
-                                                <th className="px-4 py-3">Total</th>
-                                                <th className="px-4 py-3">Status</th>
+                                                <th className="px-4 py-3">
+                                                    Order
+                                                </th>
+                                                <th className="px-4 py-3">
+                                                    Buyer
+                                                </th>
+                                                <th className="px-4 py-3">
+                                                    Tickets
+                                                </th>
+                                                <th className="px-4 py-3">
+                                                    Total
+                                                </th>
+                                                <th className="px-4 py-3">
+                                                    Status
+                                                </th>
                                             </tr>
                                         </thead>
 
