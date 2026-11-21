@@ -1,4 +1,3 @@
-
 import {
     Table,
     TableBody,
@@ -7,6 +6,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
     columnFilteringFeature,
     coreRowModelsFeature,
@@ -20,9 +20,9 @@ import {
     useTable,
     type SortingState,
 } from '@tanstack/react-table'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { CustomButton } from '../components/Button/custom-button'
+import { useCallback, useMemo, useState } from 'react'
 import { apiClient } from '../api/axios'
+import { CustomButton } from '../components/Button/custom-button'
 
 type OrganiserStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 
@@ -109,127 +109,92 @@ const extractApplications = (response: unknown): OrganiserRequest[] => {
 }
 
 export default function AdminDashboard() {
-    const [data, setData] = useState<OrganiserRequest[]>([])
     const [activeTab, setActiveTab] = useState<OrganiserStatus>('PENDING')
     const [sorting, setSorting] = useState<SortingState>([])
-    const [isLoading, setIsLoading] = useState(true)
-    const [error, setError] = useState('')
     const [notice, setNotice] = useState('')
     const [reviewingId, setReviewingId] = useState<string | null>(null)
+    const queryClient = useQueryClient()
 
     // Fetch organizer applications
-   const loadApplications = useCallback(async () => {
-    try {
-        const response = await apiClient.get(
-            '/auth/admin/organizer-applications/'
-        )
-
-        const applications = extractApplications(response.data)
-
-        setData(applications)
-        setError('')
-    } catch (err) {
-        console.error('Failed to fetch organizer applications:', err)
-        setError('Unable to load organizer applications. Please try again.')
-    } finally {
-        setIsLoading(false)
-    }
-}, [])
-
-useEffect(() => {
-    let isMounted = true
-
-    const load = async () => {
-        try {
+    const {
+        data: applications = [],
+        isLoading,
+        error,
+        refetch,
+    } = useQuery({
+        queryKey: ['organizer-applications'],
+        queryFn: async () => {
             const response = await apiClient.get(
-                '/auth/admin/organizer-applications/'
+                '/auth/admin/organizer-applications'
             )
+            return extractApplications(response.data)
+        },
+    })
 
-            if (!isMounted) return
-
-            setData(extractApplications(response.data))
-            setError('')
-        } catch (err) {
-            if (!isMounted) return
-
-            console.error('Failed to fetch organizer applications:', err)
-            setError('Unable to load organizer applications. Please try again.')
-        } finally {
-            if (isMounted) {
-                setIsLoading(false)
-            }
-        }
-    }
-
-    void load()
-
-    return () => {
-        isMounted = false
-    }
-}, [])
-
-    // Approve or reject an application
-    const handleStatusChange = async (
-        id: number | string,
-        newStatus: OrganiserStatus
-    ) => {
-        const confirmed = window.confirm(
-            `Are you sure you want to ${newStatus.toLowerCase()} this organizer application?`
-        )
-
-        if (!confirmed) return
-
-        setReviewingId(String(id))
-        setError('')
-        setNotice('')
-
-        try {
+    const reviewMutation = useMutation({
+        mutationFn: async ({
+            id,
+            newStatus,
+        }: {
+            id: number | string
+            newStatus: OrganiserStatus
+        }) => {
             await apiClient.patch(
-                `/auth/admin/organizer-applications/${id}/review/`,
+                `/auth/admin/organizer-applications/${id}/review`,
                 {
                     status: newStatus,
                 }
             )
-
-            setData((currentData) =>
-                currentData.map((item) =>
-                    String(item.id) === String(id)
-                        ? { ...item, status: newStatus }
-                        : item
-                )
-            )
-
+        },
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({
+                queryKey: ['organizer-applications'],
+            })
             setNotice(
-                `Organizer application ${newStatus.toLowerCase()} successfully.`
+                `Organizer application ${variables.newStatus.toLowerCase()} successfully`
             )
-        } catch (err) {
-            console.error('Failed to review organizer application:', err)
-            setError(
-                `Failed to ${newStatus.toLowerCase()} this application. Please try again.`
-            )
-        } finally {
+        },
+        onError: (err) => {
+            console.error('Failed to review organizer applications: ', err)
+        },
+        onSettled: () => {
             setReviewingId(null)
-        }
-    }
+        },
+    })
+
+    // Approve or reject an application
+    const handleStatusChange = useCallback(
+        (id: number | string, newStatus: OrganiserStatus) => {
+            const confirmed = window.confirm(
+                `Are you sure you want to ${newStatus.toLowerCase()} this organizer application?`
+            )
+            if (!confirmed) return
+
+            setReviewingId(String(id))
+            setNotice('')
+            reviewMutation.mutate({ id, newStatus })
+        },
+        [reviewMutation]
+    )
 
     const filteredData = useMemo(
-        () => data.filter((item) => item.status === activeTab),
-        [data, activeTab]
+        () => applications.filter((item) => item.status === activeTab),
+        [applications, activeTab]
     )
 
     const pendingCount = useMemo(
-        () => data.filter((item) => item.status === 'PENDING').length,
-        [data]
+        () => applications.filter((item) => item.status === 'PENDING').length,
+        [applications]
     )
 
     const approvedCount = useMemo(
-        () => data.filter((item) => item.status === 'APPROVED').length,
-        [data]
+        () => applications.filter((item) => item.status === 'APPROVED').length,
+        [applications]
     )
 
     const rejectedCount = useMemo(
-        () => data.filter((item) => item.status === 'REJECTED').length,
-        [data]
+        () => applications.filter((item) => item.status === 'REJECTED').length,
+        [applications]
     )
 
     const columns = useMemo(
@@ -252,15 +217,14 @@ useEffect(() => {
                                         {name}
                                     </span>
                                     <span className="max-w-xs truncate text-xs text-muted-foreground">
-                                        {info.row.original.reason || 'No reason provided'}
+                                        {info.row.original.reason ||
+                                            'No reason provided'}
                                     </span>
                                 </div>
                             </div>
                         )
                     },
                 }),
-
-               
 
                 columnHelper.accessor('created_at', {
                     header: 'APPLIED',
@@ -271,12 +235,10 @@ useEffect(() => {
                     ),
                 }),
 
-                 columnHelper.accessor('reason', {
+                columnHelper.accessor('reason', {
                     header: 'DRAFT',
                     cell: () => (
-                        <span className="block max-w-sm text-sm text-muted-foreground">
-                           
-                        </span>
+                        <span className="block max-w-sm text-sm text-muted-foreground"></span>
                     ),
                 }),
 
@@ -325,7 +287,9 @@ useEffect(() => {
                                         }
                                         className="border-gray-100 text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:bg-transparent dark:text-red-400"
                                     >
-                                        {isReviewing ? 'Please wait...' : 'Reject'}
+                                        {isReviewing
+                                            ? 'Please wait...'
+                                            : 'Reject'}
                                     </CustomButton>
                                 )}
 
@@ -341,7 +305,9 @@ useEffect(() => {
                                             )
                                         }
                                     >
-                                        {isReviewing ? 'Please wait...' : 'Approve'}
+                                        {isReviewing
+                                            ? 'Please wait...'
+                                            : 'Approve'}
                                     </CustomButton>
                                 )}
                             </div>
@@ -384,17 +350,20 @@ useEffect(() => {
 
             {error && (
                 <div className="mt-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
-                    {error}
-                  <button
-    type="button"
-    onClick={() => {
-        setIsLoading(true)
-        void loadApplications()
-    }}
-    className="ml-2 font-bold underline"
->
-    Try again
-</button>
+                    Unable to load organizer applications. Please try again {''}
+                    <button
+                        type="button"
+                        onClick={() => refetch()}
+                        className="ml-2 font-bold underline"
+                    >
+                        Try again
+                    </button>
+                </div>
+            )}
+
+            {reviewMutation.isError && (
+                <div className="mt-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
+                    Failed to update this application. Please try again.
                 </div>
             )}
 
@@ -415,7 +384,7 @@ useEffect(() => {
                             : 'text-muted-foreground hover:text-foreground'
                     }`}
                 >
-                    Pending
+                    Pending{''}
                     <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-700 px-1.5 text-xs font-bold text-white">
                         {pendingCount}
                     </span>
@@ -476,11 +445,9 @@ useEffect(() => {
                                         key={header.id}
                                         className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground"
                                     >
-                                        {header.isPlaceholder
-                                            ? null
-                                            : (
-                                                <table.FlexRender header={header} />
-                                            )}
+                                        {header.isPlaceholder ? null : (
+                                            <table.FlexRender header={header} />
+                                        )}
                                     </TableHead>
                                 ))}
                             </TableRow>
@@ -513,7 +480,8 @@ useEffect(() => {
                                     colSpan={columns.length}
                                     className="h-32 text-center text-sm text-muted-foreground"
                                 >
-                                    No {activeTab.toLowerCase()} applications found.
+                                    No {activeTab.toLowerCase()} applications
+                                    found.
                                 </TableCell>
                             </TableRow>
                         )}
