@@ -3,15 +3,13 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import {
     ArrowLeft,
-    Camera,
-    CameraOff,
-    CheckCircle2,
+    Check,
+    AlertTriangle,
+    X,
     RefreshCw,
-    ScanLine,
-    ShieldCheck,
-    Ticket,
 } from 'lucide-react'
 import { Html5Qrcode } from 'html5-qrcode'
+import { mockVerifyTicket, type ScanResult } from '@/src/mock/ticketScannerMock'
 
 export default function EventTicketScanner() {
     const navigate = useNavigate()
@@ -26,9 +24,9 @@ export default function EventTicketScanner() {
     >('loading')
 
     const [cameraError, setCameraError] = useState('')
-    const [scannedCode, setScannedCode] = useState('')
+    const [scanResult, setScanResult] = useState<ScanResult | null>(null)
     const [scanning, setScanning] = useState(true)
-    const [scanCount, setScanCount] = useState(0)
+const [scanCount, setScanCount] = useState<number>(0)
 
     const stopScanner = useCallback(async () => {
         const scanner = scannerRef.current
@@ -52,12 +50,11 @@ export default function EventTicketScanner() {
 
         setCameraStatus('loading')
         setCameraError('')
-        setScannedCode('')
+        setScanResult(null)
         setScanning(true)
 
         try {
             const scanner = new Html5Qrcode('ticketlite-qr-reader')
-
             scannerRef.current = scanner
 
             await scanner.start(
@@ -65,19 +62,29 @@ export default function EventTicketScanner() {
                 {
                     fps: 10,
                     qrbox: {
-                        width: 250,
-                        height: 250,
+                        width: 200,
+                        height: 200,
                     },
                     aspectRatio: 1,
                 },
-async (decodedText: string) => {
-                        if (stoppedRef.current) return
+                async (decodedText: string) => {
+                    if (stoppedRef.current) return
 
+                    // Prevent the same QR code from being processed repeatedly.
                     stoppedRef.current = true
-
-                    setScannedCode(decodedText)
-                    setScanCount((count) => count + 1)
                     setScanning(false)
+                    setScanCount((count) => count + 1)
+
+                    try {
+                        const result = await mockVerifyTicket(decodedText)
+                        setScanResult(result)
+                    } catch (error) {
+                        console.error('Ticket verification failed:', error)
+                        setScanResult({
+                            status: 'invalid',
+                            message: 'Unable to verify this ticket.',
+                        })
+                    }
 
                     await stopScanner()
                 },
@@ -108,21 +115,21 @@ async (decodedText: string) => {
         }
     }, [stopScanner])
 
-   useEffect(() => {
-    let cancelled = false
+    useEffect(() => {
+        let cancelled = false
 
-    void Promise.resolve().then(() => {
-        if (!cancelled) {
-            void startScanner()
+        void Promise.resolve().then(() => {
+            if (!cancelled) {
+                void startScanner()
+            }
+        })
+
+        return () => {
+            cancelled = true
+            stoppedRef.current = true
+            void stopScanner()
         }
-    })
-
-    return () => {
-        cancelled = true
-        stoppedRef.current = true
-        void stopScanner()
-    }
-}, [startScanner, stopScanner])
+    }, [startScanner, stopScanner])
 
     const scanAgain = async () => {
         await stopScanner()
@@ -130,292 +137,270 @@ async (decodedText: string) => {
         scannerRef.current = null
 
         const reader = document.getElementById('ticketlite-qr-reader')
-
-        if (reader) {
-            reader.innerHTML = ''
-        }
+        if (reader) reader.innerHTML = ''
 
         stoppedRef.current = false
         void startScanner()
     }
 
     const goBack = () => {
+        stoppedRef.current = true
         void stopScanner()
         navigate(`/organisers/events/${id}/dashboard`)
     }
 
     return (
-        <div className="min-h-screen bg-background px-4 py-6 text-foreground sm:px-6 lg:px-8">
-            <div className="mx-auto max-w-5xl">
+        <div className="min-h-screen bg-[#f3f3f3] px-2 py-4 text-black">
+            <div className="mx-auto w-full max-w-[420px] overflow-hidden bg-white shadow-sm">
 
-                {/* HEADER */}
-                <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={goBack}
-                            className="flex h-10 w-10 items-center justify-center rounded-lg border border-border transition hover:bg-accent"
-                            aria-label="Back to event dashboard"
-                        >
-                            <ArrowLeft size={19} />
-                        </button>
+                {/* EVENT HEADER */}
+                <div className="flex h-[49px] items-center justify-between border-b border-gray-200 px-3">
+                    <div className="min-w-0">
+                        <h1 className="truncate text-[13px] font-extrabold">
+                            Campus Jazz Night
+                        </h1>
 
-                        <div>
-                            <h1 className="text-xl font-extrabold sm:text-2xl">
-                                Ticket Scanner
-                            </h1>
+                        <p className="text-[10px] text-gray-500">
+                            Gate A · Kofi (staff)
+                        </p>
+                    </div>
 
-                            <p className="mt-1 text-xs text-muted-foreground">
-                                Scan attendee tickets at the entrance
+                    <div className="text-right">
+                        <p className="text-[13px] font-extrabold text-emerald-700">
+                            313 <span className="font-normal text-gray-500">/ 480</span>
+                        </p>
+
+                        <p className="text-[9px] text-gray-500">
+                            checked in
+                        </p>
+                    </div>
+                </div>
+
+                {/* CAMERA SCANNER */}
+                <div className="relative h-[192px] overflow-hidden bg-[#1c1d1f]">
+                    <div
+                        id="ticketlite-qr-reader"
+                        className="h-full w-full overflow-hidden"
+                    />
+
+                    {/* SCANNER FRAME */}
+                    {cameraStatus === 'ready' && scanning && (
+                        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                            <div className="relative h-[132px] w-[132px]">
+                                <span className="absolute left-0 top-0 h-[30px] w-[30px] border-l-2 border-t-2 border-white/50" />
+                                <span className="absolute right-0 top-0 h-[30px] w-[30px] border-r-2 border-t-2 border-white/50" />
+                                <span className="absolute bottom-0 left-0 h-[30px] w-[30px] border-b-2 border-l-2 border-white/50" />
+                                <span className="absolute bottom-0 right-0 h-[30px] w-[30px] border-b-2 border-r-2 border-white/50" />
+                            </div>
+                        </div>
+                    )}
+
+                    {cameraStatus === 'loading' && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#1c1d1f] text-white">
+                            <RefreshCw size={25} className="animate-spin" />
+                            <p className="mt-3 text-xs font-semibold">
+                                Starting camera...
                             </p>
                         </div>
-                    </div>
+                    )}
 
-                    <span className="rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
-                        <span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-emerald-500" />
-                        Gate check-in
-                    </span>
+                    {cameraStatus === 'error' && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#1c1d1f] px-5 text-center text-white">
+                            <p className="text-sm font-bold">
+                                Camera unavailable
+                            </p>
+
+                            <p className="mt-2 text-xs text-white/70">
+                                {cameraError}
+                            </p>
+
+                            <button
+                                onClick={scanAgain}
+                                className="mt-4 bg-white px-5 py-2.5 text-xs font-bold text-black"
+                            >
+                                TRY AGAIN
+                            </button>
+                        </div>
+                    )}
                 </div>
 
-                {/* SCANNER CONTENT */}
-                <div className="grid gap-6 lg:grid-cols-5">
-
-                    {/* CAMERA */}
-                    <div className="lg:col-span-3">
-                        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-
-                            <div className="flex items-center justify-between border-b border-border px-5 py-4">
-                                <div className="flex items-center gap-2">
-                                    <ScanLine size={19} className="text-emerald-600" />
-
-                                    <h2 className="text-sm font-bold">
-                                        QR Code Scanner
-                                    </h2>
+                {/* RESULT AREA */}
+                {scanResult ? (
+                    <div
+                        className={`relative flex min-h-[412px] flex-col items-center px-[18px] pb-[19px] pt-[22px] ${
+                            scanResult.status === 'valid'
+                                ? 'bg-[#008657] text-white'
+                                : scanResult.status === 'already_used'
+                                  ? 'bg-[#ffb900] text-black'
+                                  : 'bg-[#e92127] text-white'
+                        }`}
+                    >
+                        {/* VALID */}
+                        {scanResult.status === 'valid' && (
+                            <>
+                                <div className="flex h-[74px] w-[74px] items-center justify-center rounded-full bg-white text-[#008657]">
+                                    <Check size={43} strokeWidth={3.5} />
                                 </div>
 
-                                {cameraStatus === 'ready' && scanning && (
-                                    <span className="flex items-center gap-2 text-xs font-semibold text-emerald-600">
-                                        <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
-                                        Scanning
-                                    </span>
-                                )}
-                            </div>
+                                <h2 className="mt-2 text-[40px] font-black leading-tight">
+                                    VALID
+                                </h2>
 
-                            <div className="bg-black p-3 sm:p-5">
-                                <div
-                                    id="ticketlite-qr-reader"
-                                    className="mx-auto min-h-[300px] w-full max-w-md overflow-hidden rounded-xl"
-                                />
+                                <p className="mt-1 text-sm font-semibold">
+                                    Let them in
+                                </p>
 
-                                {cameraStatus === 'loading' && (
-                                    <div className="flex min-h-[300px] flex-col items-center justify-center text-center text-white">
-                                        <RefreshCw
-                                            size={32}
-                                            className="animate-spin text-emerald-400"
-                                        />
-
-                                        <p className="mt-4 text-sm font-semibold">
-                                            Starting camera...
+                                <div className="mt-3 grid w-full grid-cols-2 rounded-md bg-[#006c48] px-3 py-2.5">
+                                    <div>
+                                        <p className="text-[9px] font-semibold text-white/70">
+                                            Ticket
                                         </p>
-
-                                        <p className="mt-2 text-xs text-white/60">
-                                            Please allow camera access when prompted.
+                                        <p className="text-xs font-extrabold">
+                                            {scanResult.ticketType}
                                         </p>
                                     </div>
-                                )}
 
-                                {cameraStatus === 'error' && (
-                                    <div className="flex min-h-[300px] flex-col items-center justify-center px-5 text-center text-white">
-                                        <CameraOff
-                                            size={36}
-                                            className="text-red-400"
-                                        />
-
-                                        <h3 className="mt-4 text-base font-bold">
-                                            Camera unavailable
-                                        </h3>
-
-                                        <p className="mt-2 max-w-sm text-xs leading-6 text-white/70">
-                                            {cameraError}
+                                    <div>
+                                        <p className="text-[9px] font-semibold text-white/70">
+                                            Holder
                                         </p>
-
-                                        <button
-                                            onClick={scanAgain}
-                                            className="mt-5 inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-3 text-xs font-bold text-white hover:bg-emerald-700"
-                                        >
-                                            <RefreshCw size={15} />
-                                            TRY AGAIN
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="px-5 py-4">
-                                <div className="flex items-center gap-3">
-                                    <Camera
-                                        size={18}
-                                        className="text-muted-foreground"
-                                    />
-
-                                    <p className="text-xs text-muted-foreground">
-                                        Position the attendee's QR code inside
-                                        the scanning frame.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* SCAN RESULT */}
-                        {scannedCode && (
-                            <div className="mt-5 rounded-xl border border-amber-300 bg-amber-50 p-5 dark:border-amber-900 dark:bg-amber-950/30">
-                                <div className="flex items-start gap-3">
-                                    <CheckCircle2
-                                        size={22}
-                                        className="shrink-0 text-amber-600"
-                                    />
-
-                                    <div className="min-w-0 flex-1">
-                                        <h3 className="font-bold text-amber-800 dark:text-amber-300">
-                                            QR code detected
-                                        </h3>
-
-                                        <p className="mt-1 text-xs leading-5 text-amber-700 dark:text-amber-400">
-                                            The QR code was successfully read.
-                                            Backend verification is not yet connected.
+                                        <p className="text-xs font-extrabold">
+                                            {scanResult.holder}
                                         </p>
-
-                                        <div className="mt-4 rounded-lg border border-amber-200 bg-white p-3 dark:border-amber-900 dark:bg-black/20">
-                                            <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                                                Decoded QR information
-                                            </p>
-
-                                            <p className="break-all text-xs font-medium text-foreground">
-                                                {scannedCode}
-                                            </p>
-                                        </div>
-
-                                        <button
-                                            onClick={scanAgain}
-                                            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-4 py-3 text-xs font-bold text-white hover:bg-emerald-800"
-                                        >
-                                            <ScanLine size={15} />
-                                            SCAN ANOTHER TICKET
-                                        </button>
                                     </div>
                                 </div>
-                            </div>
+                            </>
                         )}
-                    </div>
 
-                    {/* SIDEBAR INFORMATION */}
-                    <div className="space-y-5 lg:col-span-2">
-
-                        <div className="rounded-xl border border-border bg-card p-5">
-                            <div className="flex items-center gap-3">
-                                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
-                                    <Ticket size={21} />
+                        {/* ALREADY USED */}
+                        {scanResult.status === 'already_used' && (
+                            <>
+                                <div className="flex h-[74px] w-[74px] items-center justify-center rounded-full bg-black text-[#ffb900]">
+                                    <AlertTriangle size={39} strokeWidth={2.5} />
                                 </div>
 
-                                <div>
-                                    <h3 className="text-sm font-extrabold">
-                                        Scanning session
-                                    </h3>
+                                <h2 className="mt-2 text-center text-[31px] font-black leading-[1.05]">
+                                    ALREADY
+                                    <br />
+                                    USED
+                                </h2>
 
-                                    <p className="text-xs text-muted-foreground">
-                                        Current event
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="mt-5 border-t border-border pt-4">
-                                <p className="text-xs text-muted-foreground">
-                                    Event ID
+                                <p className="mt-2 text-center text-sm font-semibold">
+                                    Do not let in. Call a supervisor.
                                 </p>
 
-                                <p className="mt-1 text-sm font-bold">
-                                    {id}
+                                <div className="mt-3 grid w-full grid-cols-2 rounded-md bg-white px-3 py-2.5 text-black">
+                                    <div>
+                                        <p className="text-[9px] text-gray-500">
+                                            First scanned
+                                        </p>
+                                        <p className="text-xs font-extrabold">
+                                            {scanResult.firstScanned}
+                                        </p>
+                                    </div>
+
+                                    <div>
+                                        <p className="text-[9px] text-gray-500">
+                                            By
+                                        </p>
+                                        <p className="text-xs font-extrabold">
+                                            {scanResult.scannedBy}
+                                        </p>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+
+                        {/* INVALID */}
+                        {scanResult.status === 'invalid' && (
+                            <>
+                                <div className="flex h-[74px] w-[74px] items-center justify-center rounded-full bg-white text-[#e92127]">
+                                    <X size={43} strokeWidth={3.5} />
+                                </div>
+
+                                <h2 className="mt-2 text-[40px] font-black leading-tight">
+                                    INVALID
+                                </h2>
+
+                                <p className="mt-1 text-sm font-semibold">
+                                    Do not let in
                                 </p>
-                            </div>
 
-                            <div className="mt-4 border-t border-border pt-4">
-                                <p className="text-xs text-muted-foreground">
-                                    QR codes detected
-                                </p>
-
-                                <p className="mt-1 text-2xl font-extrabold">
-                                    {scanCount}
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="rounded-xl border border-border bg-card p-5">
-                            <div className="flex items-center gap-2">
-                                <ShieldCheck
-                                    size={19}
-                                    className="text-emerald-600"
-                                />
-
-                                <h3 className="text-sm font-extrabold">
-                                    Check-in instructions
-                                </h3>
-                            </div>
-
-                            <div className="mt-4 space-y-4">
-                                <div className="flex gap-3">
-                                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
-                                        1
-                                    </span>
-
-                                    <p className="text-xs leading-5 text-muted-foreground">
-                                        Ask the attendee to present their TicketLite QR code.
+                                <div className="mt-3 w-full rounded-md bg-white px-3 py-2.5 text-black">
+                                    <p className="text-[11px] leading-[18px]">
+                                        {scanResult.message}
                                     </p>
                                 </div>
+                            </>
+                        )}
 
-                                <div className="flex gap-3">
-                                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
-                                        2
-                                    </span>
-
-                                    <p className="text-xs leading-5 text-muted-foreground">
-                                        Position the QR code inside the camera frame.
-                                    </p>
-                                </div>
-
-                                <div className="flex gap-3">
-                                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
-                                        3
-                                    </span>
-
-                                    <p className="text-xs leading-5 text-muted-foreground">
-                                        Wait for the QR code to be detected.
-                                    </p>
-                                </div>
-
-                                <div className="flex gap-3">
-                                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
-                                        4
-                                    </span>
-
-                                    <p className="text-xs leading-5 text-muted-foreground">
-                                        Verify the ticket with the backend once check-in integration is available.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
+                        {/* SCAN NEXT */}
                         <button
-                            onClick={goBack}
-                            className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-3 text-xs font-bold transition hover:bg-accent"
+                            onClick={scanAgain}
+                            className={`mt-auto flex min-h-[43px] w-full items-center justify-center text-xs font-extrabold ${
+                                scanResult.status === 'already_used'
+                                    ? 'bg-black text-white'
+                                    : 'bg-white text-[#006c48]'
+                            } ${
+                                scanResult.status === 'invalid'
+                                    ? 'text-[#e92127]'
+                                    : ''
+                            }`}
                         >
-                            <ArrowLeft size={16} />
-                            BACK TO EVENT DASHBOARD
+                            SCAN NEXT
                         </button>
                     </div>
-                </div>
+                ) : (
+                    <div className="flex min-h-[412px] flex-col items-center justify-center bg-[#008657] px-5 py-8 text-center text-white">
+                        {cameraStatus === 'ready' ? (
+                            <>
+                                <p className="text-xl font-black">
+                                    READY TO SCAN
+                                </p>
+                                <p className="mt-2 text-xs">
+                                    Position the attendee's QR code inside the camera frame.
+                                </p>
+                            </>
+                        ) : (
+                            <p className="text-sm font-semibold">
+                                Waiting for camera...
+                            </p>
+                        )}
+                    </div>
+                )}
 
-                <p className="mt-8 text-center text-[10px] text-muted-foreground">
-                    TicketLite Gate Check-in · QR scanning mode
+                {/* BACK BUTTON */}
+                <button
+                    onClick={goBack}
+                    className="flex w-full items-center justify-center gap-2 border-t border-gray-200 bg-white py-3 text-xs font-bold text-gray-600"
+                >
+                    <ArrowLeft size={15} />
+                    BACK TO EVENT DASHBOARD
+                </button>
+
+                <p className="bg-white pb-3 text-center text-[9px] text-gray-400">
+                    TicketLite Gate Check-in
                 </p>
             </div>
+<p className="text-sm text-muted-foreground">
+    Total scans: {scanCount}
+</p>
+            <style>{`
+                #ticketlite-qr-reader video {
+                    width: 100% !important;
+                    height: 192px !important;
+                    object-fit: cover !important;
+                }
+
+                #ticketlite-qr-reader__dashboard,
+                #ticketlite-qr-reader__header_message {
+                    display: none !important;
+                }
+
+                #ticketlite-qr-reader img {
+                    display: none !important;
+                }
+            `}</style>
         </div>
     )
 }
