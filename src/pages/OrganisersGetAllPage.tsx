@@ -8,7 +8,6 @@ import {
     Link2,
     Moon,
     Plus,
-    PlusIcon,
     Search,
     Sun,
     Ticket,
@@ -382,23 +381,16 @@ export default function OrganisersGetAllPage() {
                             Organizer
                         </p>
 
-<<<<<<< HEAD
                         <nav className="flex flex-col gap-1">
                             <CustomButton
                                 variant="secondary"
                                 fullWidth
-=======
-                        <nav className="flex gap-2 overflow-x-auto md:flex-col">
-                            <button
-                                // variant="secondary"
->>>>>>> 1a90bce (refactor(OrganisersGetAllPage): replace CustomButton with native button for navigation and update CREATE EVENT button to use PlusIcon)
                                 onClick={() => navigate('/organisers')}
                                 icon={<CalendarDays size={17} />}
                                 className="!flex !min-h-[62px] !w-full !flex-row !items-center !justify-start !gap-4 !rounded-lg !border-l-4 !border-emerald-700 !bg-emerald-50 !px-4 !py-4 text-left !text-base !font-bold !text-slate-950 shadow-none dark:!border-emerald-500 dark:!bg-emerald-950 dark:!text-emerald-200"
                             >
                                 My events
-                            </button>
-
+                            </CustomButton>
                             <CustomButton
                                 variant="secondary"
                                 fullWidth
@@ -465,7 +457,6 @@ export default function OrganisersGetAllPage() {
                                 </h1>
                             </div>
 
-<<<<<<< HEAD
                           <CustomButton
     variant="primary"
     onClick={() => navigate('/organisers/create-event')}
@@ -474,16 +465,6 @@ export default function OrganisersGetAllPage() {
 >
     CREATE EVENT
 </CustomButton>
-=======
-                            <CustomButton
-                                variant="primary"
-                                to={'/organisers/create-event'}
-                                icon={<PlusIcon />}
-                                className="inline-flex items-center justify-center gap-2 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-green-800"
-                            >
-                                CREATE EVENT
-                            </CustomButton>
->>>>>>> 1a90bce (refactor(OrganisersGetAllPage): replace CustomButton with native button for navigation and update CREATE EVENT button to use PlusIcon)
                         </header>
 
                         {/* SUMMARY CARDS */}
