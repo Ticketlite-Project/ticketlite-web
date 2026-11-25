@@ -1,9 +1,11 @@
+
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { ArrowLeft, Timer } from 'lucide-react'
 import { CustomInput } from '../components/forms'
+import { apiClient } from '@/src/api/axios'
 
 type Network = 'MTN' | 'Telecel' | 'AT'
 
@@ -32,17 +34,40 @@ type CheckoutState = {
     currency: string
 }
 
+type InitiatePaymentResponse = {
+    message: string
+    payment: {
+        id: number
+        reservation: number
+        provider: string
+        phone_number: string
+        amount: string
+        reference: string
+        status: string
+        created_at: string
+        updated_at: string
+    }
+}
+
 const NETWORK_LABELS: Record<Network, string> = {
     MTN: 'MTN Mobile Money',
     Telecel: 'Telecel Cash',
     AT: 'AT Money',
 }
 
+const PROVIDER_VALUES: Record<Network, string> = {
+    MTN: 'MTN',
+    Telecel: 'TELECEL',
+    AT: 'AT',
+}
+
 const checkoutSchema = z.object({
     phoneNumber: z
         .string()
         .transform((value) => value.replace(/\s/g, ''))
-        .transform((value) => (value.startsWith('0') ? value.slice(1) : value))
+        .transform((value) =>
+            value.startsWith('0') ? value.slice(1) : value
+        )
         .refine((value) => /^[0-9]{9}$/.test(value), {
             message: 'Enter a valid 9-digit Ghanaian phone number',
         }),
@@ -58,9 +83,9 @@ export default function CheckoutPage() {
     const navigate = useNavigate()
     const location = useLocation()
     const checkout = location.state as CheckoutState | null
-    const loginState = { from: location }
 
     const [secondsLeft, setSecondsLeft] = useState(10 * 60)
+    const [paymentError, setPaymentError] = useState('')
 
     const {
         register,
@@ -69,7 +94,10 @@ export default function CheckoutPage() {
         setError,
         formState: { errors, isSubmitting },
     } = useForm<CheckoutFormValues>({
-        defaultValues: { network: 'MTN', phoneNumber: '' },
+        defaultValues: {
+            network: 'MTN',
+            phoneNumber: '',
+        },
     })
 
     const selectedNetwork = watch('network')
@@ -84,8 +112,14 @@ export default function CheckoutPage() {
         return () => window.clearInterval(interval)
     }, [secondsLeft])
 
-    const minutes = Math.floor(secondsLeft / 60).toString().padStart(2, '0')
-    const seconds = (secondsLeft % 60).toString().padStart(2, '0')
+    const minutes = Math.floor(secondsLeft / 60)
+        .toString()
+        .padStart(2, '0')
+
+    const seconds = (secondsLeft % 60)
+        .toString()
+        .padStart(2, '0')
+
     const isExpired = secondsLeft === 0
 
     const hasValidCheckout =
@@ -95,65 +129,118 @@ export default function CheckoutPage() {
         checkout.selectedTickets.some((ticket) => ticket.quantity > 0)
 
     const selectedTickets =
-        checkout?.selectedTickets?.filter((ticket) => ticket.quantity > 0) ?? []
-    const quantity = selectedTickets.reduce((sum, ticket) => sum + ticket.quantity, 0)
-    const currency = checkout?.currency || selectedTickets[0]?.currency || 'GHS'
+        checkout?.selectedTickets?.filter(
+            (ticket) => ticket.quantity > 0
+        ) ?? []
+
+    const quantity = selectedTickets.reduce(
+        (sum, ticket) => sum + ticket.quantity,
+        0
+    )
+
+    const currency =
+        checkout?.currency ||
+        selectedTickets[0]?.currency ||
+        'GHS'
 
     const handlePayment = handleSubmit(async (values) => {
-        if (isExpired || !checkout || !hasValidCheckout) return
+        setPaymentError('')
+
+        if (isExpired || !checkout || !hasValidCheckout) {
+            return
+        }
 
         const result = checkoutSchema.safeParse(values)
+
         if (!result.success) {
             const phoneIssue = result.error.issues.find(
                 (issue) => issue.path[0] === 'phoneNumber'
             )
+
             if (phoneIssue) {
                 setError('phoneNumber', {
                     type: 'manual',
                     message: phoneIssue.message,
                 })
             }
+
             return
         }
 
-        navigate('/payment/mobile-money', {
-            state: {
-                phoneNumber: result.data.phoneNumber,
-                network: result.data.network,
-                amount: checkout.total,
-                currency,
-                eventName: checkout.event.title,
-                eventId: checkout.event.id,
-                eventDate: checkout.event.date,
-                eventTime: checkout.event.time,
-                venue: checkout.event.venue,
-                selectedTickets,
-                quantity,
-                secondsLeft,
-            },
-        })
+        try {
+            const response =
+                await apiClient.post<InitiatePaymentResponse>(
+                    '/payments/initiate/',
+                   {
+    reservation: 0,
+    provider: PROVIDER_VALUES[result.data.network].toLowerCase(),
+     phone_number: result.data.phoneNumber.startsWith('0')
+        ? result.data.phoneNumber
+        : `0${result.data.phoneNumber}`,
+}
+                )
+
+            const paymentData = response.data?.payment
+
+            if (!paymentData?.id) {
+                throw new Error(
+                    'The payment response did not contain a payment ID.'
+                )
+            }
+
+            navigate('/payment/mobile-money', {
+                state: {
+                    phoneNumber: result.data.phoneNumber,
+                    network: result.data.network,
+                    amount: checkout.total,
+                    currency,
+                    eventName: checkout.event.title,
+                    eventId: checkout.event.id,
+                    eventDate: checkout.event.date,
+                    eventTime: checkout.event.time,
+                    venue: checkout.event.venue,
+                    selectedTickets,
+                    quantity,
+                    secondsLeft,
+
+                    paymentId: paymentData.id,
+                    reservationId: paymentData.reservation,
+                    paymentReference: paymentData.reference,
+                    initialPaymentStatus: paymentData.status,
+                },
+            })
+        } catch (error) {
+            console.error('Payment initiation failed:', error)
+
+            setPaymentError(
+                'Unable to initiate your payment. Please check your details and try again.'
+            )
+        }
     })
 
     const handleCancel = () => {
         const confirmed = window.confirm(
             'Are you sure you want to cancel this reservation and release your tickets? This action cannot be undone.'
         )
+
         if (!confirmed) return
 
-        // TODO: Connect reservation cancellation to the reservation API.
-        navigate('/login', { replace: true, state: loginState })
+        // The backend cancellation endpoint has not been provided yet.
+        navigate('/', { replace: true })
     }
 
     if (!hasValidCheckout || !checkout) {
         return (
-            <main className="min-h-screen bg-slate-50 flex items-center justify-center p-5">
+            <main className="flex min-h-screen items-center justify-center bg-slate-50 p-5">
                 <section className="w-full max-w-lg rounded-xl bg-white p-8 text-center shadow-sm">
                     <h1 className="text-xl font-bold text-slate-900">
                         No tickets selected
                     </h1>
+
                     <p className="mt-3 text-sm text-slate-600">
                         Select tickets from an event before continuing to checkout.
                     </p>
+
                     <button
                         type="button"
                         onClick={() => navigate('/')}
@@ -179,31 +266,46 @@ export default function CheckoutPage() {
                         <ArrowLeft size={20} />
                         <span>Checkout</span>
                     </button>
-                    <span className="text-xs text-slate-500">Step 1 of 2</span>
+
+                    <span className="text-xs text-slate-500">
+                        Step 1 of 2
+                    </span>
                 </header>
 
                 <div className="flex flex-col gap-8 p-5 sm:p-8 lg:flex-row">
                     <div className="min-w-0 flex-1 space-y-6">
                         <div className="flex items-center justify-between gap-4 rounded-lg border border-emerald-200 bg-lime-100 px-4 py-3">
                             <div className="flex items-center gap-3">
-                                <Timer size={22} className="shrink-0 text-slate-900" />
+                                <Timer
+                                    size={22}
+                                    className="shrink-0 text-slate-900"
+                                />
+
                                 <div>
                                     <p className="text-sm font-bold text-slate-950">
                                         Tickets held for you
                                     </p>
+
                                     <p className="text-xs text-slate-700">
                                         Complete payment before the timer ends
                                     </p>
                                 </div>
                             </div>
+
                             <span className="text-xl font-extrabold tabular-nums text-slate-950">
                                 {minutes}:{seconds}
                             </span>
                         </div>
 
                         {isExpired && (
-                            <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4">
-                                <p className="font-bold text-red-800">Reservation expired</p>
+                            <div
+                                role="alert"
+                                className="rounded-lg border border-red-200 bg-red-50 p-4"
+                            >
+                                <p className="font-bold text-red-800">
+                                    Reservation expired
+                                </p>
+
                                 <p className="mt-1 text-sm text-red-700">
                                     Your ticket reservation has expired. Please select your tickets again.
                                 </p>
@@ -214,13 +316,18 @@ export default function CheckoutPage() {
                             <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
                                 Event
                             </p>
+
                             <h1 className="mt-2 text-xl font-bold text-slate-950">
                                 {checkout.event.title}
                             </h1>
+
                             <p className="mt-1 text-sm text-slate-600">
                                 {checkout.event.date} · {checkout.event.time}
                             </p>
-                            <p className="text-sm text-slate-600">{checkout.event.venue}</p>
+
+                            <p className="text-sm text-slate-600">
+                                {checkout.event.venue}
+                            </p>
                         </section>
 
                         <form
@@ -237,27 +344,31 @@ export default function CheckoutPage() {
                                 <legend className="mb-3 text-sm font-medium text-slate-700">
                                     Select your network
                                 </legend>
+
                                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                                    {Object.entries(NETWORK_LABELS).map(([item, label]) => (
-                                        <label
-                                            key={item}
-                                            className={`flex cursor-pointer items-center gap-2 rounded-lg border p-3 transition ${
-                                                selectedNetwork === item
-                                                    ? 'border-emerald-600 bg-emerald-50'
-                                                    : 'border-slate-200 hover:border-slate-300'
-                                            }`}
-                                        >
-                                            <input
-                                                type="radio"
-                                                value={item}
-                                                {...register('network')}
-                                                className="h-4 w-4 accent-emerald-600"
-                                            />
-                                            <span className="text-sm font-medium text-slate-900">
-                                                {label}
-                                            </span>
-                                        </label>
-                                    ))}
+                                    {Object.entries(NETWORK_LABELS).map(
+                                        ([item, label]) => (
+                                            <label
+                                                key={item}
+                                                className={`flex cursor-pointer items-center gap-2 rounded-lg border p-3 transition ${
+                                                    selectedNetwork === item
+                                                        ? 'border-emerald-600 bg-emerald-50'
+                                                        : 'border-slate-200 hover:border-slate-300'
+                                                }`}
+                                            >
+                                                <input
+                                                    type="radio"
+                                                    value={item}
+                                                    {...register('network')}
+                                                    className="h-4 w-4 accent-emerald-600"
+                                                />
+
+                                                <span className="text-sm font-medium text-slate-900">
+                                                    {label}
+                                                </span>
+                                            </label>
+                                        )
+                                    )}
                                 </div>
                             </fieldset>
 
@@ -273,39 +384,82 @@ export default function CheckoutPage() {
                                     className="h-11"
                                     {...register('phoneNumber')}
                                 />
+
                                 <p className="mt-2 text-xs text-slate-500">
-                                    You'll receive a prompt to approve {formatCurrency(checkout.total, currency)}.
+                                    You'll receive a prompt to approve{' '}
+                                    {formatCurrency(checkout.total, currency)}.
                                 </p>
                             </div>
+
+                            {paymentError && (
+                                <div
+                                    role="alert"
+                                    className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+                                >
+                                    {paymentError}
+                                </div>
+                            )}
                         </form>
                     </div>
 
                     <aside className="h-fit w-full rounded-lg border border-slate-200 p-5 lg:max-w-sm">
-                        <h2 className="text-lg font-bold text-slate-950">Order summary</h2>
+                        <h2 className="text-lg font-bold text-slate-950">
+                            Order summary
+                        </h2>
+
                         <div className="mt-4 space-y-4">
                             {selectedTickets.map((ticket) => (
-                                <div key={ticket.id} className="flex justify-between gap-4 text-sm">
+                                <div
+                                    key={ticket.id}
+                                    className="flex justify-between gap-4 text-sm"
+                                >
                                     <span className="text-slate-600">
                                         {ticket.name} × {ticket.quantity}
                                     </span>
+
                                     <span className="shrink-0 font-medium text-slate-900">
-                                        {formatCurrency(ticket.subtotal, currency)}
+                                        {formatCurrency(
+                                            ticket.subtotal,
+                                            currency
+                                        )}
                                     </span>
                                 </div>
                             ))}
                         </div>
+
                         <div className="mt-5 space-y-3 border-t border-slate-100 pt-4 text-sm">
                             <div className="flex justify-between">
-                                <span className="text-slate-600">Subtotal</span>
-                                <span className="font-medium">{formatCurrency(checkout.subtotal, currency)}</span>
+                                <span className="text-slate-600">
+                                    Subtotal
+                                </span>
+
+                                <span className="font-medium">
+                                    {formatCurrency(
+                                        checkout.subtotal,
+                                        currency
+                                    )}
+                                </span>
                             </div>
+
                             <div className="flex justify-between">
-                                <span className="text-slate-600">Service fee</span>
-                                <span className="font-medium">{formatCurrency(checkout.serviceFee, currency)}</span>
+                                <span className="text-slate-600">
+                                    Service fee
+                                </span>
+
+                                <span className="font-medium">
+                                    {formatCurrency(
+                                        checkout.serviceFee,
+                                        currency
+                                    )}
+                                </span>
                             </div>
                         </div>
+
                         <div className="mt-4 flex items-center justify-between border-t border-slate-200 pt-4">
-                            <span className="font-bold text-slate-900">Total</span>
+                            <span className="font-bold text-slate-900">
+                                Total
+                            </span>
+
                             <span className="text-xl font-extrabold text-slate-950">
                                 {formatCurrency(checkout.total, currency)}
                             </span>
@@ -321,6 +475,7 @@ export default function CheckoutPage() {
                     >
                         Cancel and release tickets
                     </button>
+
                     <button
                         type="submit"
                         form="checkout-form"
