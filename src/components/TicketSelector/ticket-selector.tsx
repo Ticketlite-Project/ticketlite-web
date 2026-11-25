@@ -28,10 +28,14 @@ export default function TicketSelector({
     const { isAuthenticated, isInitializing } = useAuth()
 
     const [quantities, setQuantities] = useState<Record<string, number>>(
-        ticketTypes.reduce(
-            (acc, ticket) => ({ ...acc, [ticket.id]: 0 }),
-            {}
-        )
+        () =>
+            ticketTypes.reduce(
+                (acc, ticket) => ({
+                    ...acc,
+                    [String(ticket.id)]: 0,
+                }),
+                {} as Record<string, number>
+            )
     )
 
     const totalTickets = Object.values(quantities).reduce(
@@ -40,14 +44,15 @@ export default function TicketSelector({
     )
 
     const selectedTickets = ticketTypes
-        .filter((ticket) => quantities[ticket.id] > 0)
+        .filter((ticket) => quantities[String(ticket.id)] > 0)
         .map((ticket) => ({
             id: ticket.id,
             name: ticket.name,
             price: ticket.price,
             currency: ticket.currency,
-            quantity: quantities[ticket.id],
-            subtotal: ticket.price * quantities[ticket.id],
+            quantity: quantities[String(ticket.id)],
+            subtotal:
+                ticket.price * quantities[String(ticket.id)],
         }))
 
     const totalPrice = selectedTickets.reduce(
@@ -88,7 +93,9 @@ export default function TicketSelector({
             0
         )
 
-        const ticket = ticketTypes.find((item) => item.id === id)
+        const ticket = ticketTypes.find(
+            (item) => String(item.id) === id
+        )
 
         if (
             !ticket ||
@@ -100,14 +107,14 @@ export default function TicketSelector({
 
         setQuantities((prev) => ({
             ...prev,
-            [id]: prev[id] + 1,
+            [id]: (prev[id] ?? 0) + 1,
         }))
     }
 
     const handleDecrement = (id: string) => {
         setQuantities((prev) => ({
             ...prev,
-            [id]: Math.max(0, prev[id] - 1),
+            [id]: Math.max(0, (prev[id] ?? 0) - 1),
         }))
     }
 
@@ -123,17 +130,20 @@ export default function TicketSelector({
 
             <div className="space-y-6">
                 {ticketTypes.map((ticket) => {
+                    const ticketId = String(ticket.id)
+                    const selectedQuantity = quantities[ticketId] ?? 0
+
                     const isLowStock =
-                        ticket.lowStockThreshold &&
+                        ticket.lowStockThreshold !== undefined &&
                         ticket.available <= ticket.lowStockThreshold
 
                     const canIncrement =
                         totalTickets < maxTicketsPerOrder &&
-                        quantities[ticket.id] < ticket.available
+                        selectedQuantity < ticket.available
 
                     return (
                         <div
-                            key={ticket.id}
+                            key={ticketId}
                             className="flex items-start justify-between border-b border-gray-100 pb-4 last:border-0 last:pb-0"
                         >
                             <div className="flex-1 pr-4">
@@ -142,7 +152,8 @@ export default function TicketSelector({
                                 </h3>
 
                                 <p className="text-lg font-bold text-[#1a6e44]">
-                                    {ticket.currency} {ticket.price.toFixed(2)}
+                                    {ticket.currency}{' '}
+                                    {ticket.price.toFixed(2)}
                                 </p>
 
                                 <p className="mt-1 text-xs text-primary">
@@ -156,21 +167,25 @@ export default function TicketSelector({
                                 <button
                                     type="button"
                                     aria-label="Remove a ticket"
-                                    onClick={() => handleDecrement(ticket.id)}
-                                    disabled={quantities[ticket.id] === 0}
+                                    onClick={() =>
+                                        handleDecrement(ticketId)
+                                    }
+                                    disabled={selectedQuantity === 0}
                                     className="flex h-8 w-8 items-center justify-center rounded border border-gray-300 disabled:opacity-50"
                                 >
                                     -
                                 </button>
 
                                 <span className="w-4 text-center font-medium">
-                                    {quantities[ticket.id]}
+                                    {selectedQuantity}
                                 </span>
 
                                 <button
                                     type="button"
                                     aria-label="Add one more ticket"
-                                    onClick={() => handleIncrement(ticket.id)}
+                                    onClick={() =>
+                                        handleIncrement(ticketId)
+                                    }
                                     disabled={!canIncrement}
                                     className="flex h-8 w-8 items-center justify-center rounded border border-gray-300 disabled:opacity-50"
                                 >
