@@ -1,164 +1,305 @@
 
-import type { TicketType } from '@/src/types/event-ticket.types'
-import { useAuth } from '@/src/hooks/useAuth'
-import { Lock } from 'lucide-react'
 import { useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router'
+import { Lock, Minus, Plus } from 'lucide-react'
+import { toast } from 'sonner'
+import { isAxiosError } from 'axios'
+
 import { CustomButton } from '../Button/custom-button'
+import { useAuth } from '@/src/context/AuthContext'
+import { apiClient } from '@/src/api/axios'
+import type { TicketType } from '@/src/types/event-ticket.types'
+
+type EventInfo = {
+    id: string
+    title: string
+    date: string
+    time: string
+    venue: string
+}
 
 type TicketSelectorProps = {
-    event: {
-        id: string
-        title: string
-        date: string
-        time: string
-        venue: string
-    }
+    event: EventInfo
     ticketTypes: TicketType[]
     maxTicketsPerOrder: number
 }
+
+type SelectedTicket = {
+    id: string | number
+    name: string
+    price: number
+    currency: string
+    quantity: number
+    subtotal: number
+}
+
+type BookingItem = {
+    ticket_type: number
+    quantity: number
+}
+
+type BookingResponse = {
+    id: number
+    reference: string
+    status: string
+    total_amount: string | number
+    expires_at: string
+}
+
+const SERVICE_FEE = 0
+
+const formatCurrency = (amount: number, currency: string) =>
+    `${currency} ${amount.toFixed(2)}`
 
 export default function TicketSelector({
     event,
     ticketTypes,
     maxTicketsPerOrder,
-}: Readonly<TicketSelectorProps>) {
+}: TicketSelectorProps) {
     const navigate = useNavigate()
     const location = useLocation()
-    const { isAuthenticated, isInitializing } = useAuth()
+    const { user } = useAuth()
 
-    const [quantities, setQuantities] = useState<Record<string, number>>(
-        () =>
-            ticketTypes.reduce(
-                (acc, ticket) => ({
-                    ...acc,
-                    [String(ticket.id)]: 0,
-                }),
-                {} as Record<string, number>
+    const [quantities, setQuantities] = useState<Record<string, number>>({})
+    const [isCreatingReservation, setIsCreatingReservation] = useState(false)
+    const [errorMessage, setErrorMessage] = useState('')
+
+    const selectedTickets: SelectedTicket[] = ticketTypes
+        .filter((ticket) => (quantities[String(ticket.id)] ?? 0) > 0)
+        .map((ticket) => {
+            const quantity = quantities[String(ticket.id)]
+
+            return {
+                id: ticket.id,
+                name: ticket.name,
+                price: Number(ticket.price),
+                currency: ticket.currency || 'GHS',
+                quantity,
+                subtotal: Number(ticket.price) * quantity,
+            }
+        })
+
+    const totalQuantity = selectedTickets.reduce(
+        (sum, ticket) => sum + ticket.quantity,
+        0
+    )
+
+    const subtotal = selectedTickets.reduce(
+        (sum, ticket) => sum + ticket.subtotal,
+        0
+    )
+
+    const currency = selectedTickets[0]?.currency || 'GHS'
+    const total = subtotal + SERVICE_FEE
+
+    const handleIncrement = (ticketId: string) => {
+        setErrorMessage('')
+
+        const ticket = ticketTypes.find(
+            (item) => String(item.id) === ticketId
+        )
+
+        if (!ticket) return
+
+        const currentQuantity = quantities[ticketId] ?? 0
+
+        const ticketLimit = Math.min(
+            ticket.available,
+            ticket.maxPerOrder ?? maxTicketsPerOrder
+        )
+
+        if (currentQuantity >= ticketLimit) {
+            setErrorMessage(
+                `Only ${ticket.available} ${ticket.name} ticket(s) are available.`
             )
-    )
+            return
+        }
 
-    const totalTickets = Object.values(quantities).reduce(
-        (a, b) => a + b,
-        0
-    )
+        if (totalQuantity >= maxTicketsPerOrder) {
+            setErrorMessage(
+                `You can only purchase ${maxTicketsPerOrder} ticket(s) per order.`
+            )
+            return
+        }
 
-    const selectedTickets = ticketTypes
-        .filter((ticket) => quantities[String(ticket.id)] > 0)
-        .map((ticket) => ({
-            id: ticket.id,
-            name: ticket.name,
-            price: ticket.price,
-            currency: ticket.currency,
-            quantity: quantities[String(ticket.id)],
-            subtotal:
-                ticket.price * quantities[String(ticket.id)],
+        setQuantities((previous) => ({
+            ...previous,
+            [ticketId]: currentQuantity + 1,
         }))
+    }
 
-    const totalPrice = selectedTickets.reduce(
-        (total, ticket) => total + ticket.subtotal,
-        0
-    )
+    const handleDecrement = (ticketId: string) => {
+        setErrorMessage('')
 
-    const serviceFee = 0
-    const total = totalPrice + serviceFee
-    const currency = ticketTypes[0]?.currency ?? 'GHS'
+        setQuantities((previous) => {
+            const currentQuantity = previous[ticketId] ?? 0
 
-    const handleCheckout = () => {
-        if (isInitializing || totalTickets === 0) return
+            if (currentQuantity <= 1) {
+                const updated = { ...previous }
+                delete updated[ticketId]
+                return updated
+            }
 
-        if (!isAuthenticated) {
+            return {
+                ...previous,
+                [ticketId]: currentQuantity - 1,
+            }
+        })
+    }
+
+    const handleContinue = async () => {
+        if (isCreatingReservation) return
+
+        setErrorMessage('')
+
+        if (!user) {
             navigate('/login', {
-                state: { from: location },
+                state: {
+                    from: location,
+                },
             })
             return
         }
 
-        navigate('/checkout', {
-            state: {
-                event,
-                selectedTickets,
-                quantity: totalTickets,
-                subtotal: totalPrice,
-                serviceFee,
-                total,
-                currency,
-            },
-        })
-    }
-
-    const handleIncrement = (id: string) => {
-        const currentTotal = Object.values(quantities).reduce(
-            (a, b) => a + b,
-            0
-        )
-
-        const ticket = ticketTypes.find(
-            (item) => String(item.id) === id
-        )
-
-        if (
-            !ticket ||
-            currentTotal >= maxTicketsPerOrder ||
-            quantities[id] >= ticket.available
-        ) {
+        if (selectedTickets.length === 0 || totalQuantity === 0) {
+            setErrorMessage('Please select at least one ticket.')
             return
         }
 
-        setQuantities((prev) => ({
-            ...prev,
-            [id]: (prev[id] ?? 0) + 1,
-        }))
-    }
+        if (totalQuantity > maxTicketsPerOrder) {
+            setErrorMessage(
+                `You can only purchase ${maxTicketsPerOrder} ticket(s) per order.`
+            )
+            return
+        }
 
-    const handleDecrement = (id: string) => {
-        setQuantities((prev) => ({
-            ...prev,
-            [id]: Math.max(0, (prev[id] ?? 0) - 1),
-        }))
+        // The backend requires actual numeric ticket type IDs.
+        // Mock IDs such as "tkt_live_vip" cannot be used.
+        const bookingItems: BookingItem[] = []
+
+        for (const ticket of selectedTickets) {
+            const ticketTypeId = Number(ticket.id)
+
+            if (
+                !Number.isSafeInteger(ticketTypeId) ||
+                ticketTypeId <= 0
+            ) {
+                setErrorMessage(
+                    `Invalid ticket type ID for ${ticket.name}. Please load this event from the backend before making a reservation.`
+                )
+                return
+            }
+
+            bookingItems.push({
+                ticket_type: ticketTypeId,
+                quantity: ticket.quantity,
+            })
+        }
+
+        setIsCreatingReservation(true)
+
+        try {
+            const response = await apiClient.post<BookingResponse>(
+                '/bookings/create/',
+                {
+                    items: bookingItems,
+                }
+            )
+
+            const booking = response.data
+
+            if (
+                !booking?.id ||
+                !booking.reference ||
+                !booking.expires_at
+            ) {
+                throw new Error(
+                    'The booking response is missing its reservation ID, reference or expiry time.'
+                )
+            }
+
+            navigate('/checkout', {
+                state: {
+                    event,
+                    selectedTickets,
+                    quantity: totalQuantity,
+                    subtotal,
+                    serviceFee: SERVICE_FEE,
+                    total,
+                    currency,
+
+                    reservationId: booking.id,
+                    bookingReference: booking.reference,
+                    bookingExpiry: booking.expires_at,
+                },
+            })
+        } catch (error: unknown) {
+            console.error('Ticket reservation failed:', error)
+
+            let message =
+                'Unable to reserve your tickets. Please try again.'
+
+            if (isAxiosError(error)) {
+                const responseData = error.response?.data as
+                    | {
+                          message?: string
+                          detail?: string
+                      }
+                    | undefined
+
+                message =
+                    responseData?.message ||
+                    responseData?.detail ||
+                    error.message ||
+                    message
+            } else if (error instanceof Error) {
+                message = error.message
+            }
+
+            setErrorMessage(message)
+
+            toast.error('Reservation failed', {
+                description: message,
+            })
+        } finally {
+            setIsCreatingReservation(false)
+        }
     }
 
     return (
-        <div className="sticky top-6 rounded-lg border bg-card p-4 shadow-sm">
-            <h2 className="mb-1 text-xl font-bold text-primary">
-                Choose tickets
-            </h2>
-
-            <p className="mb-6 text-sm text-primary">
-                Max {maxTicketsPerOrder} tickets per order
-            </p>
-
-            <div className="space-y-6">
+        <section className="space-y-5">
+            <div className="space-y-4">
                 {ticketTypes.map((ticket) => {
                     const ticketId = String(ticket.id)
-                    const selectedQuantity = quantities[ticketId] ?? 0
-
-                    const isLowStock =
-                        ticket.lowStockThreshold !== undefined &&
-                        ticket.available <= ticket.lowStockThreshold
-
-                    const canIncrement =
-                        totalTickets < maxTicketsPerOrder &&
-                        selectedQuantity < ticket.available
+                    const quantity = quantities[ticketId] ?? 0
+                    const isSoldOut = ticket.available <= 0
 
                     return (
                         <div
                             key={ticketId}
-                            className="flex items-start justify-between border-b border-gray-100 pb-4 last:border-0 last:pb-0"
+                            className="flex flex-col gap-4 rounded-xl border border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between"
                         >
-                            <div className="flex-1 pr-4">
-                                <h3 className="font-semibold text-primary">
+                            <div className="min-w-0 flex-1">
+                                <h3 className="font-bold text-slate-900">
                                     {ticket.name}
                                 </h3>
 
-                                <p className="text-lg font-bold text-[#1a6e44]">
-                                    {ticket.currency}{' '}
-                                    {ticket.price.toFixed(2)}
+                                {ticket.description && (
+                                    <p className="mt-1 text-sm text-slate-500">
+                                        {ticket.description}
+                                    </p>
+                                )}
+
+                                <p className="mt-2 font-semibold text-slate-900">
+                                    {formatCurrency(
+                                        Number(ticket.price),
+                                        ticket.currency || 'GHS'
+                                    )}
                                 </p>
 
-                                <p className="mt-1 text-xs text-primary">
-                                    {isLowStock
-                                        ? `Only ${ticket.available} left`
+                                <p className="mt-1 text-xs text-slate-500">
+                                    {isSoldOut
+                                        ? 'Sold out'
                                         : `${ticket.available} available`}
                                 </p>
                             </div>
@@ -166,30 +307,32 @@ export default function TicketSelector({
                             <div className="flex items-center gap-3">
                                 <button
                                     type="button"
-                                    aria-label="Remove a ticket"
-                                    onClick={() =>
-                                        handleDecrement(ticketId)
+                                    onClick={() => handleDecrement(ticketId)}
+                                    disabled={
+                                        quantity === 0 ||
+                                        isCreatingReservation
                                     }
-                                    disabled={selectedQuantity === 0}
-                                    className="flex h-8 w-8 items-center justify-center rounded border border-gray-300 disabled:opacity-50"
+                                    aria-label={`Remove one ${ticket.name} ticket`}
+                                    className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
                                 >
-                                    -
+                                    <Minus size={16} />
                                 </button>
 
-                                <span className="w-4 text-center font-medium">
-                                    {selectedQuantity}
+                                <span className="w-6 text-center font-bold tabular-nums text-slate-900">
+                                    {quantity}
                                 </span>
 
                                 <button
                                     type="button"
-                                    aria-label="Add one more ticket"
-                                    onClick={() =>
-                                        handleIncrement(ticketId)
+                                    onClick={() => handleIncrement(ticketId)}
+                                    disabled={
+                                        isSoldOut ||
+                                        isCreatingReservation
                                     }
-                                    disabled={!canIncrement}
-                                    className="flex h-8 w-8 items-center justify-center rounded border border-gray-300 disabled:opacity-50"
+                                    aria-label={`Add one ${ticket.name} ticket`}
+                                    className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
                                 >
-                                    +
+                                    <Plus size={16} />
                                 </button>
                             </div>
                         </div>
@@ -197,32 +340,66 @@ export default function TicketSelector({
                 })}
             </div>
 
-            <div className="mt-8 border-t border-gray-200 pt-4">
-                <div className="mb-4 flex items-center justify-between">
-                    <span className="text-gray-600">
-                        {totalTickets} ticket
-                        {totalTickets !== 1 ? 's' : ''}
-                    </span>
+            {errorMessage && (
+                <div
+                    role="alert"
+                    className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+                >
+                    {errorMessage}
+                </div>
+            )}
 
-                    <span className="text-xl font-extrabold text-gray-900">
-                        {currency} {total.toFixed(2)}
+            <div className="rounded-xl border border-slate-200 p-4">
+                <div className="flex justify-between text-sm text-slate-600">
+                    <span>Tickets selected</span>
+                    <span className="font-semibold text-slate-900">
+                        {totalQuantity}
                     </span>
                 </div>
 
-                <CustomButton
-                    variant="primary"
-                    disabled={totalTickets === 0 || isInitializing}
-                    onClick={handleCheckout}
-                    className="w-full bg-[#1a6e44] py-3 font-bold text-white"
-                >
-                    CONTINUE TO CHECKOUT
-                </CustomButton>
+                <div className="mt-3 flex justify-between text-sm text-slate-600">
+                    <span>Subtotal</span>
+                    <span className="font-semibold text-slate-900">
+                        {formatCurrency(subtotal, currency)}
+                    </span>
+                </div>
 
-                <p className="flex items-center justify-center gap-1 pt-3 text-center text-xs text-gray-500">
-                    <Lock className="h-3 w-3" />
-                    Pay with mobile money. No card needed.
-                </p>
+                <div className="mt-3 flex justify-between text-sm text-slate-600">
+                    <span>Service fee</span>
+                    <span className="font-semibold text-slate-900">
+                        {formatCurrency(SERVICE_FEE, currency)}
+                    </span>
+                </div>
+
+                <div className="mt-4 flex justify-between border-t border-slate-200 pt-4">
+                    <span className="font-bold text-slate-900">
+                        Total
+                    </span>
+
+                    <span className="text-lg font-extrabold text-slate-900">
+                        {formatCurrency(total, currency)}
+                    </span>
+                </div>
             </div>
-        </div>
+
+            <CustomButton
+                type="button"
+                onClick={handleContinue}
+                disabled={
+                    totalQuantity === 0 ||
+                    isCreatingReservation
+                }
+                className="w-full"
+            >
+                {isCreatingReservation
+                    ? 'CREATING RESERVATION...'
+                    : 'CONTINUE TO CHECKOUT'}
+            </CustomButton>
+
+            <p className="flex items-center justify-center gap-2 text-xs text-slate-500">
+                <Lock size={13} />
+                Your tickets will be reserved before payment.
+            </p>
+        </section>
     )
 }

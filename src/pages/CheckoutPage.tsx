@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -10,7 +10,7 @@ import { apiClient } from '@/src/api/axios'
 type Network = 'MTN' | 'Telecel' | 'AT'
 
 type SelectedTicket = {
-    id: string
+    id: string | number
     name: string
     price: number
     currency: string
@@ -32,6 +32,11 @@ type CheckoutState = {
     serviceFee: number
     total: number
     currency: string
+
+    // Created by /bookings/create/ in TicketSelector
+    reservationId: number
+    bookingReference: string
+    bookingExpiry: string
 }
 
 type InitiatePaymentResponse = {
@@ -79,13 +84,28 @@ type CheckoutFormValues = z.input<typeof checkoutSchema>
 const formatCurrency = (amount: number, currency: string) =>
     `${currency} ${amount.toFixed(2)}`
 
+const getRemainingSeconds = (expiry?: string) => {
+    if (!expiry) return 0
+
+    const expiryTime = new Date(expiry).getTime()
+
+    if (Number.isNaN(expiryTime)) return 0
+
+    return Math.max(0, Math.ceil((expiryTime - Date.now()) / 1000))
+}
+
 export default function CheckoutPage() {
     const navigate = useNavigate()
     const location = useLocation()
+
     const checkout = location.state as CheckoutState | null
 
-    const [secondsLeft, setSecondsLeft] = useState(10 * 60)
+    const [secondsLeft, setSecondsLeft] = useState(() =>
+        getRemainingSeconds(checkout?.bookingExpiry)
+    )
     const [paymentError, setPaymentError] = useState('')
+
+    const expiryRequestSent = useRef(false)
 
     const {
         register,
@@ -102,15 +122,20 @@ export default function CheckoutPage() {
 
     const selectedNetwork = watch('network')
 
+    // Keep the countdown synchronized with the backend reservation expiry.
     useEffect(() => {
-        if (secondsLeft === 0) return
+        if (!checkout?.bookingExpiry) return
 
-        const interval = window.setInterval(() => {
-            setSecondsLeft((previous) => Math.max(previous - 1, 0))
-        }, 1000)
+        const updateCountdown = () => {
+            setSecondsLeft(getRemainingSeconds(checkout.bookingExpiry))
+        }
+
+        updateCountdown()
+
+        const interval = window.setInterval(updateCountdown, 1000)
 
         return () => window.clearInterval(interval)
-    }, [secondsLeft])
+    }, [checkout?.bookingExpiry])
 
     const minutes = Math.floor(secondsLeft / 60)
         .toString()
@@ -120,13 +145,16 @@ export default function CheckoutPage() {
         .toString()
         .padStart(2, '0')
 
-    const isExpired = secondsLeft === 0
+    const isExpired = secondsLeft <= 0
 
     const hasValidCheckout =
         !!checkout?.event &&
         Array.isArray(checkout.selectedTickets) &&
         checkout.selectedTickets.length > 0 &&
-        checkout.selectedTickets.some((ticket) => ticket.quantity > 0)
+        checkout.selectedTickets.some((ticket) => ticket.quantity > 0) &&
+        Number.isInteger(checkout.reservationId) &&
+        checkout.reservationId > 0 &&
+        !!checkout.bookingExpiry
 
     const selectedTickets =
         checkout?.selectedTickets?.filter(
@@ -143,10 +171,33 @@ export default function CheckoutPage() {
         selectedTickets[0]?.currency ||
         'GHS'
 
+    // The backend endpoint expires pending reservations whose expiry
+    // time has passed. Do not call it before the reservation expires.
+    useEffect(() => {
+        if (
+            !isExpired ||
+            !checkout?.reservationId ||
+            expiryRequestSent.current
+        ) {
+            return
+        }
+
+        expiryRequestSent.current = true
+
+        apiClient
+            .post('/bookings/expire/')
+            .catch((error) => {
+                console.error('Reservation expiry request failed:', error)
+            })
+    }, [isExpired, checkout?.reservationId])
+
     const handlePayment = handleSubmit(async (values) => {
         setPaymentError('')
 
         if (isExpired || !checkout || !hasValidCheckout) {
+            setPaymentError(
+                'Your reservation is missing or has expired. Please select your tickets again.'
+            )
             return
         }
 
@@ -168,16 +219,16 @@ export default function CheckoutPage() {
         }
 
         try {
+            // The reservation was already created in TicketSelector.
+            // Do not create another reservation here.
             const response =
                 await apiClient.post<InitiatePaymentResponse>(
                     '/payments/initiate/',
-                   {
-    reservation: 0,
-    provider: PROVIDER_VALUES[result.data.network].toLowerCase(),
-     phone_number: result.data.phoneNumber.startsWith('0')
-        ? result.data.phoneNumber
-        : `0${result.data.phoneNumber}`,
-}
+                    {
+                        reservation: checkout.reservationId,
+                        provider: PROVIDER_VALUES[result.data.network],
+                        phone_number: `0${result.data.phoneNumber}`,
+                    }
                 )
 
             const paymentData = response.data?.payment
@@ -190,7 +241,7 @@ export default function CheckoutPage() {
 
             navigate('/payment/mobile-money', {
                 state: {
-                    phoneNumber: result.data.phoneNumber,
+                    phoneNumber: `0${result.data.phoneNumber}`,
                     network: result.data.network,
                     amount: checkout.total,
                     currency,
@@ -202,9 +253,10 @@ export default function CheckoutPage() {
                     selectedTickets,
                     quantity,
                     secondsLeft,
-
+                    bookingReference: checkout.bookingReference,
+                    bookingExpiry: checkout.bookingExpiry,
                     paymentId: paymentData.id,
-                    reservationId: paymentData.reservation,
+                    reservationId: checkout.reservationId,
                     paymentReference: paymentData.reference,
                     initialPaymentStatus: paymentData.status,
                 },
@@ -220,13 +272,14 @@ export default function CheckoutPage() {
 
     const handleCancel = () => {
         const confirmed = window.confirm(
-            'Are you sure you want to cancel this reservation and release your tickets? This action cannot be undone.'
+            'Are you sure you want to leave checkout? Your reservation will remain pending until it expires.'
         )
 
         if (!confirmed) return
 
-        // The backend cancellation endpoint has not been provided yet.
-        navigate('/', { replace: true })
+        // No reservation cancellation endpoint has been provided.
+        // The reservation will expire according to its backend expiry time.
+        navigate('/events', { replace: true })
     }
 
     if (!hasValidCheckout || !checkout) {
@@ -234,16 +287,17 @@ export default function CheckoutPage() {
             <main className="flex min-h-screen items-center justify-center bg-slate-50 p-5">
                 <section className="w-full max-w-lg rounded-xl bg-white p-8 text-center shadow-sm">
                     <h1 className="text-xl font-bold text-slate-900">
-                        No tickets selected
+                        Reservation unavailable
                     </h1>
 
                     <p className="mt-3 text-sm text-slate-600">
-                        Select tickets from an event before continuing to checkout.
+                        Your reservation details are missing or invalid.
+                        Please select your tickets again.
                     </p>
 
                     <button
                         type="button"
-                        onClick={() => navigate('/')}
+                        onClick={() => navigate('/events')}
                         className="mt-6 rounded-lg bg-emerald-700 px-6 py-3 font-bold text-white hover:bg-emerald-800"
                     >
                         BROWSE EVENTS
@@ -307,7 +361,8 @@ export default function CheckoutPage() {
                                 </p>
 
                                 <p className="mt-1 text-sm text-red-700">
-                                    Your ticket reservation has expired. Please select your tickets again.
+                                    Your ticket reservation has expired.
+                                    Please select your tickets again.
                                 </p>
                             </div>
                         )}
@@ -328,6 +383,15 @@ export default function CheckoutPage() {
                             <p className="text-sm text-slate-600">
                                 {checkout.event.venue}
                             </p>
+
+                            {checkout.bookingReference && (
+                                <p className="mt-3 text-xs text-slate-500">
+                                    Reservation reference:{' '}
+                                    <span className="font-semibold text-slate-700">
+                                        {checkout.bookingReference}
+                                    </span>
+                                </p>
+                            )}
                         </section>
 
                         <form
@@ -473,7 +537,7 @@ export default function CheckoutPage() {
                         onClick={handleCancel}
                         className="rounded-lg px-5 py-3 text-sm font-semibold text-emerald-700 underline underline-offset-2 hover:text-emerald-800"
                     >
-                        Cancel and release tickets
+                        Leave checkout
                     </button>
 
                     <button
