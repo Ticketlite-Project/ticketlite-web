@@ -44,21 +44,6 @@ interface PaymentDetails {
     initialPaymentStatus?: string
 }
 
-type SavedTicket = {
-    ticketId: string
-    paymentReference: string
-    eventName: string
-    ticketType: string
-    eventDate: string
-    eventTime: string
-    venue: string
-    phoneNumber: string
-    network: Network
-    amount: number
-    status: 'valid'
-    createdAt: string
-}
-
 type SimulatePaymentResponse = {
     message: string
     payment: {
@@ -72,15 +57,8 @@ type SimulatePaymentResponse = {
         created_at: string
         updated_at: string
     }
-    reservation_status?: string
+    reservation_status: string
 }
-
-const SUCCESS_STATUSES = [
-    'SUCCESS',
-    'SUCCEEDED',
-    'COMPLETED',
-    'PAID',
-]
 
 const FAILED_STATUSES = [
     'FAILED',
@@ -101,6 +79,7 @@ export default function MobileMoneyPaymentFlow() {
     const [isSimulating, setIsSimulating] = useState(false)
     const [paymentError, setPaymentError] = useState('')
 
+    // Countdown timer
     useEffect(() => {
         if (status !== 'waiting') return
 
@@ -121,6 +100,7 @@ export default function MobileMoneyPaymentFlow() {
         return () => window.clearTimeout(timer)
     }, [secondsLeft, status])
 
+    // Validate payment information
     if (
         !payment ||
         !payment.paymentId ||
@@ -173,6 +153,10 @@ export default function MobileMoneyPaymentFlow() {
     const secondaryClass =
         'w-full rounded-lg bg-slate-100 px-4 py-3 text-sm font-bold text-emerald-700 transition-colors hover:bg-slate-200'
 
+    const ticketLines = payment.selectedTickets.filter(
+        (ticket) => ticket.quantity > 0
+    )
+
     const retryPayment = () => {
         if (secondsLeft <= 0) {
             setStatus('expired')
@@ -183,8 +167,21 @@ export default function MobileMoneyPaymentFlow() {
         setStatus('waiting')
     }
 
-    const goToCheckout = () => navigate('/checkout')
+    // Return to checkout
+    const goToCheckout = async () => {
+        try {
+            await apiClient.post('/bookings/expire/')
+        } catch (error) {
+            console.error(
+                'Unable to expire reservation:',
+                error
+            )
+        } finally {
+            navigate('/checkout')
+        }
+    }
 
+    // Simulate and verify payment with the backend
     const handleSimulatePayment = async () => {
         if (!payment.paymentId || isSimulating) return
 
@@ -200,23 +197,48 @@ export default function MobileMoneyPaymentFlow() {
                     }
                 )
 
+            const backendMessage =
+                response.data?.message?.trim()
+
+            const reservationStatus = String(
+                response.data?.reservation_status ?? ''
+            ).toUpperCase()
+
+            // Only redirect when the backend confirms the reservation.
+            if (
+                backendMessage ===
+                    'Simulated payment processed.' &&
+                reservationStatus === 'CONFIRMED'
+            ) {
+                setStatus('approved')
+
+                navigate('/my-tickets', {
+                    replace: true,
+                })
+
+                return
+            }
+
             const backendStatus = String(
                 response.data?.payment?.status ?? ''
             ).toUpperCase()
 
-            if (SUCCESS_STATUSES.includes(backendStatus)) {
-                setStatus('approved')
-            } else if (FAILED_STATUSES.includes(backendStatus)) {
+            if (FAILED_STATUSES.includes(backendStatus)) {
                 setStatus('declined')
-            } else {
-                setPaymentError(
-                    `The backend has not confirmed payment yet. Current status: ${
-                        backendStatus || 'UNKNOWN'
-                    }.`
-                )
+                return
             }
+
+            setPaymentError(
+                backendMessage ||
+                    `Payment has not been confirmed. Reservation status: ${
+                        reservationStatus || 'UNKNOWN'
+                    }. Please try again.`
+            )
         } catch (error) {
-            console.error('Payment simulation failed:', error)
+            console.error(
+                'Payment simulation failed:',
+                error
+            )
 
             setPaymentError(
                 'Unable to process the payment simulation. Please try again.'
@@ -226,66 +248,19 @@ export default function MobileMoneyPaymentFlow() {
         }
     }
 
+    // Navigate to My Tickets.
+    // Tickets are retrieved from the backend on that page.
     const handleViewMyTickets = () => {
-        if (status !== 'approved') return
-
-        const paymentReference =
-            payment.paymentReference || `MOMO-${payment.paymentId}`
-
-        let ticketNumber = 0
-
-        const newTickets: SavedTicket[] =
-            payment.selectedTickets.flatMap((selected) =>
-                Array.from(
-                    { length: selected.quantity },
-                    () => {
-                        ticketNumber += 1
-
-                        return {
-                            ticketId: `TL-${payment.paymentId}-${ticketNumber}`,
-                            paymentReference,
-                            eventName: payment.eventName,
-                            ticketType: selected.name,
-                            eventDate: payment.eventDate,
-                            eventTime: payment.eventTime,
-                            venue: payment.venue,
-                            phoneNumber: payment.phoneNumber,
-                            network: payment.network,
-                            amount: selected.price,
-                            status: 'valid' as const,
-                            createdAt: new Date().toISOString(),
-                        }
-                    }
-                )
-            )
-
-        try {
-            const existingTickets = JSON.parse(
-                localStorage.getItem('ticketlite_tickets') || '[]'
-            ) as SavedTicket[]
-
-            localStorage.setItem(
-                'ticketlite_tickets',
-                JSON.stringify([...existingTickets, ...newTickets])
-            )
-
-            navigate('/my-tickets')
-        } catch (error) {
-            console.error('Unable to save tickets:', error)
-
-            setPaymentError(
-                'Payment was successful, but your tickets could not be saved on this device.'
-            )
-        }
+        navigate('/my-tickets', {
+            replace: true,
+        })
     }
-
-    const ticketLines = payment.selectedTickets.filter(
-        (ticket) => ticket.quantity > 0
-    )
 
     return (
         <main className="min-h-screen bg-slate-50 px-4 py-6 sm:px-6 lg:px-8">
             <section className="mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-4xl flex-col overflow-hidden rounded-xl bg-white shadow-sm">
+
+                {/* WAITING FOR PAYMENT */}
                 {status === 'waiting' && (
                     <>
                         <header className="flex items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-8">
@@ -451,6 +426,7 @@ export default function MobileMoneyPaymentFlow() {
                     </>
                 )}
 
+                {/* PAYMENT APPROVED */}
                 {status === 'approved' && (
                     <>
                         <div className="bg-emerald-700 p-9 text-center text-white">
@@ -546,6 +522,7 @@ export default function MobileMoneyPaymentFlow() {
                     </>
                 )}
 
+                {/* PAYMENT DECLINED */}
                 {status === 'declined' && (
                     <>
                         <header className="flex items-center gap-3 border-b p-5">
@@ -618,6 +595,7 @@ export default function MobileMoneyPaymentFlow() {
                     </>
                 )}
 
+                {/* RESERVATION EXPIRED */}
                 {status === 'expired' && (
                     <>
                         <header className="flex items-center gap-3 border-b p-5">

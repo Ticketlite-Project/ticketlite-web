@@ -404,7 +404,7 @@ export default function OrganisersGetAllPage() {
                             <CustomButton
                                 variant="secondary"
                                 fullWidth
-                                onClick={() => navigate('/gate-check-in')}
+                                onClick={() => navigate(`/gate-check-in`)}
                                 icon={<Check size={17} />}
                                 className="!flex !min-h-[62px] !w-full !flex-row !items-center !justify-start !gap-4 !rounded-lg !border-l-4 !border-transparent !bg-transparent !px-4 !py-4 text-left !text-base !font-medium !text-slate-700 shadow-none transition hover:!bg-slate-100 dark:!text-slate-300 dark:hover:!bg-slate-800"
                             >

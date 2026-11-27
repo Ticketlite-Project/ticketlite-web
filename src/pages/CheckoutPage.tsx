@@ -32,8 +32,6 @@ type CheckoutState = {
     serviceFee: number
     total: number
     currency: string
-
-    // Created by /bookings/create/ in TicketSelector
     reservationId: number
     bookingReference: string
     bookingExpiry: string
@@ -104,7 +102,10 @@ export default function CheckoutPage() {
         getRemainingSeconds(checkout?.bookingExpiry)
     )
     const [paymentError, setPaymentError] = useState('')
+    const [isExpiring, setIsExpiring] = useState(false)
+    const [expiryError, setExpiryError] = useState('')
 
+    // Prevent duplicate expiry requests during the component lifecycle.
     const expiryRequestSent = useRef(false)
 
     const {
@@ -127,7 +128,9 @@ export default function CheckoutPage() {
         if (!checkout?.bookingExpiry) return
 
         const updateCountdown = () => {
-            setSecondsLeft(getRemainingSeconds(checkout.bookingExpiry))
+            setSecondsLeft(
+                getRemainingSeconds(checkout.bookingExpiry)
+            )
         }
 
         updateCountdown()
@@ -171,11 +174,10 @@ export default function CheckoutPage() {
         selectedTickets[0]?.currency ||
         'GHS'
 
-    // The backend endpoint expires pending reservations whose expiry
-    // time has passed. Do not call it before the reservation expires.
+    // Automatically expire pending reservations when the timer reaches zero.
     useEffect(() => {
         if (
-            !isExpired ||
+            secondsLeft > 0 ||
             !checkout?.reservationId ||
             expiryRequestSent.current
         ) {
@@ -183,13 +185,38 @@ export default function CheckoutPage() {
         }
 
         expiryRequestSent.current = true
+        setIsExpiring(true)
+        setExpiryError('')
 
-        apiClient
-            .post('/bookings/expire/')
-            .catch((error) => {
-                console.error('Reservation expiry request failed:', error)
-            })
-    }, [isExpired, checkout?.reservationId])
+        const expireReservation = async () => {
+            try {
+                const response = await apiClient.post(
+                    '/bookings/expire/'
+                )
+
+                console.log(
+                    'Reservation expiry response:',
+                    response.data
+                )
+            } catch (error) {
+                console.error(
+                    'Reservation expiry request failed:',
+                    error
+                )
+
+                setExpiryError(
+                    'We could not confirm the reservation expiry with the server. Please try again.'
+                )
+
+                // Allow another attempt if the request failed.
+                expiryRequestSent.current = false
+            } finally {
+                setIsExpiring(false)
+            }
+        }
+
+        void expireReservation()
+    }, [secondsLeft, checkout?.reservationId])
 
     const handlePayment = handleSubmit(async (values) => {
         setPaymentError('')
@@ -277,8 +304,8 @@ export default function CheckoutPage() {
 
         if (!confirmed) return
 
-        // No reservation cancellation endpoint has been provided.
-        // The reservation will expire according to its backend expiry time.
+        // The backend expiry endpoint only expires reservations
+        // whose expiry time has passed.
         navigate('/events', { replace: true })
     }
 
@@ -364,6 +391,32 @@ export default function CheckoutPage() {
                                     Your ticket reservation has expired.
                                     Please select your tickets again.
                                 </p>
+
+                                {isExpiring && (
+                                    <p className="mt-2 text-xs text-red-700">
+                                        Confirming reservation expiry...
+                                    </p>
+                                )}
+
+                                {expiryError && (
+                                    <div className="mt-3">
+                                        <p className="text-sm text-red-700">
+                                            {expiryError}
+                                        </p>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                expiryRequestSent.current = false
+                                                setSecondsLeft(0)
+                                            }}
+                                            disabled={isExpiring}
+                                            className="mt-2 text-sm font-bold text-red-800 underline disabled:opacity-50"
+                                        >
+                                            Retry expiry request
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         )}
 

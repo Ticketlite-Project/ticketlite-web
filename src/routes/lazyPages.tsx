@@ -9,7 +9,7 @@ export const AdminPlatformNumbers = lazy(
 )
 
 export const EventDetails = lazy(() => import('../pages/EventDetails'))
-
+export const GateCheckIn = lazy(() => import('../pages/GateCheckIn'))
 export const MyTickets = lazy(() => import('../pages/MyTickets'))
 
 export const OrganisersGetAllPage = lazy(

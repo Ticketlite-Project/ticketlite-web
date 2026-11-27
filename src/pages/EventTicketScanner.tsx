@@ -1,33 +1,68 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import {
     ArrowLeft,
     Check,
     AlertTriangle,
     X,
     RefreshCw,
+    Camera,
+    ScanLine,
 } from 'lucide-react'
 import { Html5Qrcode } from 'html5-qrcode'
-import { mockVerifyTicket, type ScanResult } from '@/src/mock/ticketScannerMock'
+import { apiClient } from '@/src/api/axios'
+
+type VerificationResult =
+    | {
+          type: 'valid'
+          message: string
+          ticketCode: string
+          status: string
+      }
+    | {
+          type: 'already_used'
+          message: string
+      }
+    | {
+          type: 'invalid'
+          message: string
+      }
+
+type CameraStatus = 'loading' | 'ready' | 'error'
+
+interface ScannerLocationState {
+    eventTitle?: string
+}
 
 export default function EventTicketScanner() {
     const navigate = useNavigate()
+    const location = useLocation()
     const { id } = useParams()
+
+    const locationState =
+        location.state as ScannerLocationState | null
+
+    const eventTitle =
+        locationState?.eventTitle || 'Event ticket scanner'
 
     const scannerRef = useRef<Html5Qrcode | null>(null)
     const startingRef = useRef(false)
-    const stoppedRef = useRef(false)
+    const verifyingRef = useRef(false)
+    const mountedRef = useRef(true)
 
-    const [cameraStatus, setCameraStatus] = useState<
-        'loading' | 'ready' | 'error'
-    >('loading')
+    const [cameraStatus, setCameraStatus] =
+        useState<CameraStatus>('loading')
 
     const [cameraError, setCameraError] = useState('')
-    const [scanResult, setScanResult] = useState<ScanResult | null>(null)
-    const [scanning, setScanning] = useState(true)
-const [scanCount, setScanCount] = useState<number>(0)
 
+    const [scanResult, setScanResult] =
+        useState<VerificationResult | null>(null)
+
+    const [isVerifying, setIsVerifying] = useState(false)
+    const [scanCount, setScanCount] = useState(0)
+
+    // Stop and clear the current camera scanner.
     const stopScanner = useCallback(async () => {
         const scanner = scannerRef.current
 
@@ -38,23 +73,131 @@ const [scanCount, setScanCount] = useState<number>(0)
                 await scanner.stop()
             }
         } catch (error) {
-            console.error('Unable to stop camera:', error)
+            console.error('Error stopping scanner:', error)
+        }
+
+        try {
+            scanner.clear()
+        } catch {
+            // Scanner may already have been cleared.
+        }
+
+        if (scannerRef.current === scanner) {
+            scannerRef.current = null
         }
     }, [])
 
+    // Verify the decoded QR code with the backend.
+    const verifyTicket = useCallback(
+        async (ticketCode: string) => {
+            if (verifyingRef.current) return
+
+            verifyingRef.current = true
+
+            if (mountedRef.current) {
+                setIsVerifying(true)
+            }
+
+            await stopScanner()
+
+            try {
+                const response = await apiClient.post<{
+                    message: string
+                    ticket_code: string
+                    status: string
+                }>('/bookings/verify-ticket/', {
+                    ticket_code: ticketCode,
+                })
+
+                if (!mountedRef.current) return
+
+                setScanResult({
+                    type: 'valid',
+                    message:
+                        response.data.message || 'Ticket verified successfully.',
+                    ticketCode: response.data.ticket_code,
+                    status: response.data.status,
+                })
+            } catch (error: unknown) {
+                if (!mountedRef.current) return
+
+                const apiError = error as {
+                    response?: {
+                        status?: number
+                        data?: {
+                            error?: string
+                        }
+                    }
+                }
+
+                const httpStatus = apiError.response?.status
+                const backendMessage = apiError.response?.data?.error
+
+                // HTTP 400: Ticket already used.
+                if (httpStatus === 400) {
+                    setScanResult({
+                        type: 'already_used',
+                        message:
+                            backendMessage ||
+                            'This ticket has already been used.',
+                    })
+                }
+                // HTTP 403 or 404: Invalid ticket.
+                else if (
+                    httpStatus === 403 ||
+                    httpStatus === 404
+                ) {
+                    setScanResult({
+                        type: 'invalid',
+                        message:
+                            backendMessage ||
+                            'This code is not a valid ticket for this event. It may be fake, edited, or for a different event.',
+                    })
+                }
+                // Other errors.
+                else {
+                    setScanResult({
+                        type: 'invalid',
+                        message:
+                            backendMessage ||
+                            'Unable to verify this ticket. Please check your connection and try again.',
+                    })
+                }
+
+                console.error(
+                    'Ticket verification failed:',
+                    error
+                )
+            } finally {
+                verifyingRef.current = false
+
+                if (mountedRef.current) {
+                    setIsVerifying(false)
+                }
+            }
+        },
+        [stopScanner]
+    )
+
+    // Start the camera.
     const startScanner = useCallback(async () => {
-        if (startingRef.current) return
+        if (
+            startingRef.current ||
+            verifyingRef.current ||
+            scannerRef.current
+        ) {
+            return
+        }
 
         startingRef.current = true
-        stoppedRef.current = false
 
-        setCameraStatus('loading')
-        setCameraError('')
-        setScanResult(null)
-        setScanning(true)
+        if (mountedRef.current) {
+            setCameraStatus('loading')
+            setCameraError('')
+        }
 
         try {
-            const scanner = new Html5Qrcode('ticketlite-qr-reader')
+            const scanner = new Html5Qrcode('ticket-qr-reader')
             scannerRef.current = scanner
 
             await scanner.start(
@@ -67,126 +210,137 @@ const [scanCount, setScanCount] = useState<number>(0)
                     },
                     aspectRatio: 1,
                 },
-                async (decodedText: string) => {
-                    if (stoppedRef.current) return
+                async (decodedText) => {
+                    if (verifyingRef.current) return
 
-                    // Prevent the same QR code from being processed repeatedly.
-                    stoppedRef.current = true
-                    setScanning(false)
                     setScanCount((count) => count + 1)
 
-                    try {
-                        const result = await mockVerifyTicket(decodedText)
-                        setScanResult(result)
-                    } catch (error) {
-                        console.error('Ticket verification failed:', error)
-                        setScanResult({
-                            status: 'invalid',
-                            message: 'Unable to verify this ticket.',
-                        })
-                    }
-
-                    await stopScanner()
+                    await verifyTicket(decodedText)
                 },
                 () => {
-                    // Ignore continuous QR detection failures.
+                    // Ignore frames without a detected QR code.
                 }
             )
 
-            if (stoppedRef.current) {
-                await stopScanner()
-                return
+            if (mountedRef.current) {
+                setCameraStatus('ready')
+            }
+        } catch (error) {
+            console.error(
+                'Camera initialization failed:',
+                error
+            )
+
+            if (mountedRef.current) {
+                setCameraStatus('error')
+                setCameraError(
+                    'Unable to access your camera. Please allow camera permission and try again.'
+                )
             }
 
-            setCameraStatus('ready')
-        } catch (error) {
-            console.error('Camera error:', error)
-
-            setCameraStatus('error')
-            setScanning(false)
-
-            setCameraError(
-                error instanceof Error
-                    ? error.message
-                    : 'Unable to access your camera. Please check camera permissions.'
-            )
+            await stopScanner()
         } finally {
             startingRef.current = false
         }
-    }, [stopScanner])
+    }, [stopScanner, verifyTicket])
 
+    // Start the camera when the scanner page loads.
+    // It also restarts automatically when Scan Next is selected.
     useEffect(() => {
-        let cancelled = false
+        mountedRef.current = true
 
-        void Promise.resolve().then(() => {
-            if (!cancelled) {
+        if (!scanResult) {
+            const timer = window.setTimeout(() => {
                 void startScanner()
+            }, 150)
+
+            return () => {
+                window.clearTimeout(timer)
             }
-        })
+        }
+
+        return undefined
+    }, [scanResult, startScanner])
+
+    // Clean up camera when leaving the page.
+    useEffect(() => {
+        mountedRef.current = true
 
         return () => {
-            cancelled = true
-            stoppedRef.current = true
-            void stopScanner()
-        }
-    }, [startScanner, stopScanner])
+            mountedRef.current = false
 
-    const scanAgain = async () => {
+            const scanner = scannerRef.current
+
+            if (scanner) {
+                if (scanner.isScanning) {
+                    void scanner.stop().catch(() => undefined)
+                }
+
+                scannerRef.current = null
+            }
+        }
+    }, [])
+
+    const handleScanNext = async () => {
+        if (verifyingRef.current) return
+
         await stopScanner()
 
-        scannerRef.current = null
-
-        const reader = document.getElementById('ticketlite-qr-reader')
-        if (reader) reader.innerHTML = ''
-
-        stoppedRef.current = false
-        void startScanner()
+        setScanResult(null)
+        setCameraError('')
+        setCameraStatus('loading')
     }
 
-    const goBack = () => {
-        stoppedRef.current = true
-        void stopScanner()
+    const handleBack = () => {
         navigate(`/organisers/events/${id}/dashboard`)
     }
 
+    const isValid = scanResult?.type === 'valid'
+    const isAlreadyUsed = scanResult?.type === 'already_used'
+    const isInvalid = scanResult?.type === 'invalid'
+
     return (
-        <div className="min-h-screen bg-[#f3f3f3] px-2 py-4 text-black">
-            <div className="mx-auto w-full max-w-[420px] overflow-hidden bg-white shadow-sm">
+        <div className="min-h-screen bg-[#f3f4f6] text-black">
+            <div className="mx-auto min-h-screen w-full max-w-md bg-white shadow-sm">
 
                 {/* EVENT HEADER */}
-                <div className="flex h-[49px] items-center justify-between border-b border-gray-200 px-3">
+                <header className="flex min-h-[51px] items-center justify-between border-b border-gray-200 px-4 py-2">
                     <div className="min-w-0">
-                        <h1 className="truncate text-[13px] font-extrabold">
-                            Campus Jazz Night
+                        <h1 className="truncate text-sm font-extrabold text-black">
+                            {eventTitle}
                         </h1>
 
-                        <p className="text-[10px] text-gray-500">
-                            Gate A · Kofi (staff)
-                        </p>
+                        <button
+                            type="button"
+                            onClick={handleBack}
+                            className="mt-0.5 flex cursor-pointer items-center gap-1 text-[10px] font-medium text-gray-500 hover:text-black"
+                        >
+                            <ArrowLeft size={11} />
+                            Back to event dashboard
+                        </button>
                     </div>
 
-                    <div className="text-right">
-                        <p className="text-[13px] font-extrabold text-emerald-700">
-                            313 <span className="font-normal text-gray-500">/ 480</span>
+                    <div className="shrink-0 text-right">
+                        <p className="text-sm font-extrabold text-emerald-700">
+                            {scanCount}
                         </p>
-
                         <p className="text-[9px] text-gray-500">
-                            checked in
+                            scans this session
                         </p>
                     </div>
-                </div>
+                </header>
 
-                {/* CAMERA SCANNER */}
-                <div className="relative h-[192px] overflow-hidden bg-[#1c1d1f]">
+                {/* CAMERA AREA */}
+                <section className="relative h-[190px] overflow-hidden bg-[#1c1d20]">
                     <div
-                        id="ticketlite-qr-reader"
+                        id="ticket-qr-reader"
                         className="h-full w-full overflow-hidden"
                     />
 
                     {/* SCANNER FRAME */}
-                    {cameraStatus === 'ready' && scanning && (
+                    {cameraStatus === 'ready' && !scanResult && (
                         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                            <div className="relative h-[132px] w-[132px]">
+                            <div className="relative h-[130px] w-[130px]">
                                 <span className="absolute left-0 top-0 h-[30px] w-[30px] border-l-2 border-t-2 border-white/50" />
                                 <span className="absolute right-0 top-0 h-[30px] w-[30px] border-r-2 border-t-2 border-white/50" />
                                 <span className="absolute bottom-0 left-0 h-[30px] w-[30px] border-b-2 border-l-2 border-white/50" />
@@ -195,212 +349,201 @@ const [scanCount, setScanCount] = useState<number>(0)
                         </div>
                     )}
 
-                    {cameraStatus === 'loading' && (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#1c1d1f] text-white">
-                            <RefreshCw size={25} className="animate-spin" />
-                            <p className="mt-3 text-xs font-semibold">
+                    {/* CAMERA LOADING */}
+                    {cameraStatus === 'loading' && !scanResult && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#1c1d20]">
+                            <RefreshCw
+                                size={25}
+                                className="animate-spin text-white"
+                            />
+                            <p className="text-xs text-gray-300">
                                 Starting camera...
                             </p>
                         </div>
                     )}
 
-                    {cameraStatus === 'error' && (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#1c1d1f] px-5 text-center text-white">
-                            <p className="text-sm font-bold">
-                                Camera unavailable
-                            </p>
+                    {/* CAMERA ERROR */}
+                    {cameraStatus === 'error' && !scanResult && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#1c1d20] px-5 text-center">
+                            <Camera
+                                size={30}
+                                className="text-red-400"
+                            />
 
-                            <p className="mt-2 text-xs text-white/70">
+                            <p className="text-xs text-gray-300">
                                 {cameraError}
                             </p>
 
                             <button
-                                onClick={scanAgain}
-                                className="mt-4 bg-white px-5 py-2.5 text-xs font-bold text-black"
+                                type="button"
+                                onClick={() => void startScanner()}
+                                className="cursor-pointer rounded-md bg-white px-5 py-2 text-xs font-bold text-black"
                             >
-                                TRY AGAIN
+                                Try again
                             </button>
                         </div>
                     )}
-                </div>
 
-                {/* RESULT AREA */}
-                {scanResult ? (
-                    <div
-                        className={`relative flex min-h-[412px] flex-col items-center px-[18px] pb-[19px] pt-[22px] ${
-                            scanResult.status === 'valid'
-                                ? 'bg-[#008657] text-white'
-                                : scanResult.status === 'already_used'
-                                  ? 'bg-[#ffb900] text-black'
-                                  : 'bg-[#e92127] text-white'
-                        }`}
-                    >
-                        {/* VALID */}
-                        {scanResult.status === 'valid' && (
-                            <>
-                                <div className="flex h-[74px] w-[74px] items-center justify-center rounded-full bg-white text-[#008657]">
-                                    <Check size={43} strokeWidth={3.5} />
-                                </div>
+                    {/* VERIFYING */}
+                    {isVerifying && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/75">
+                            <RefreshCw
+                                size={30}
+                                className="animate-spin text-white"
+                            />
+                            <p className="text-sm font-semibold text-white">
+                                Verifying ticket...
+                            </p>
+                        </div>
+                    )}
+                </section>
 
-                                <h2 className="mt-2 text-[40px] font-black leading-tight">
-                                    VALID
-                                </h2>
+                {/* VALID RESULT */}
+                {isValid && (
+                    <section className="flex min-h-[410px] flex-col bg-[#00865A] px-5 pb-5 pt-5 text-center text-white">
+                        <div className="mx-auto flex h-[74px] w-[74px] shrink-0 items-center justify-center rounded-full bg-white">
+                            <Check
+                                size={43}
+                                strokeWidth={3.5}
+                                className="text-[#00865A]"
+                            />
+                        </div>
 
-                                <p className="mt-1 text-sm font-semibold">
-                                    Let them in
+                        <h2 className="mt-3 text-[40px] font-black leading-none tracking-tight">
+                            VALID
+                        </h2>
+
+                        <p className="mt-2 text-sm font-semibold">
+                            Let them in
+                        </p>
+
+                        <div className="mt-5 rounded-lg bg-[#006B48] px-3 py-3 text-left">
+                            <p className="text-xs font-medium text-green-100">
+                                Ticket code
+                            </p>
+
+                            <p className="mt-1 break-all text-xs font-bold text-white">
+                                {scanResult.ticketCode}
+                            </p>
+
+                            <div className="mt-3 border-t border-white/20 pt-2">
+                                <p className="text-xs font-medium text-green-100">
+                                    Backend status
                                 </p>
 
-                                <div className="mt-3 grid w-full grid-cols-2 rounded-md bg-[#006c48] px-3 py-2.5">
-                                    <div>
-                                        <p className="text-[9px] font-semibold text-white/70">
-                                            Ticket
-                                        </p>
-                                        <p className="text-xs font-extrabold">
-                                            {scanResult.ticketType}
-                                        </p>
-                                    </div>
-
-                                    <div>
-                                        <p className="text-[9px] font-semibold text-white/70">
-                                            Holder
-                                        </p>
-                                        <p className="text-xs font-extrabold">
-                                            {scanResult.holder}
-                                        </p>
-                                    </div>
-                                </div>
-                            </>
-                        )}
-
-                        {/* ALREADY USED */}
-                        {scanResult.status === 'already_used' && (
-                            <>
-                                <div className="flex h-[74px] w-[74px] items-center justify-center rounded-full bg-black text-[#ffb900]">
-                                    <AlertTriangle size={39} strokeWidth={2.5} />
-                                </div>
-
-                                <h2 className="mt-2 text-center text-[31px] font-black leading-[1.05]">
-                                    ALREADY
-                                    <br />
-                                    USED
-                                </h2>
-
-                                <p className="mt-2 text-center text-sm font-semibold">
-                                    Do not let in. Call a supervisor.
+                                <p className="mt-1 text-sm font-bold text-white">
+                                    {scanResult.status}
                                 </p>
+                            </div>
+                        </div>
 
-                                <div className="mt-3 grid w-full grid-cols-2 rounded-md bg-white px-3 py-2.5 text-black">
-                                    <div>
-                                        <p className="text-[9px] text-gray-500">
-                                            First scanned
-                                        </p>
-                                        <p className="text-xs font-extrabold">
-                                            {scanResult.firstScanned}
-                                        </p>
-                                    </div>
+                        <p className="mt-3 text-xs text-white/90">
+                            {scanResult.message}
+                        </p>
 
-                                    <div>
-                                        <p className="text-[9px] text-gray-500">
-                                            By
-                                        </p>
-                                        <p className="text-xs font-extrabold">
-                                            {scanResult.scannedBy}
-                                        </p>
-                                    </div>
-                                </div>
-                            </>
-                        )}
-
-                        {/* INVALID */}
-                        {scanResult.status === 'invalid' && (
-                            <>
-                                <div className="flex h-[74px] w-[74px] items-center justify-center rounded-full bg-white text-[#e92127]">
-                                    <X size={43} strokeWidth={3.5} />
-                                </div>
-
-                                <h2 className="mt-2 text-[40px] font-black leading-tight">
-                                    INVALID
-                                </h2>
-
-                                <p className="mt-1 text-sm font-semibold">
-                                    Do not let in
-                                </p>
-
-                                <div className="mt-3 w-full rounded-md bg-white px-3 py-2.5 text-black">
-                                    <p className="text-[11px] leading-[18px]">
-                                        {scanResult.message}
-                                    </p>
-                                </div>
-                            </>
-                        )}
-
-                        {/* SCAN NEXT */}
                         <button
-                            onClick={scanAgain}
-                            className={`mt-auto flex min-h-[43px] w-full items-center justify-center text-xs font-extrabold ${
-                                scanResult.status === 'already_used'
-                                    ? 'bg-black text-white'
-                                    : 'bg-white text-[#006c48]'
-                            } ${
-                                scanResult.status === 'invalid'
-                                    ? 'text-[#e92127]'
-                                    : ''
-                            }`}
+                            type="button"
+                            onClick={() => void handleScanNext()}
+                            className="mt-auto flex min-h-[43px] w-full cursor-pointer items-center justify-center gap-2 rounded-sm bg-white px-4 py-3 text-xs font-extrabold text-[#00865A] transition hover:bg-gray-100"
                         >
+                            <ScanLine size={16} />
                             SCAN NEXT
                         </button>
-                    </div>
-                ) : (
-                    <div className="flex min-h-[412px] flex-col items-center justify-center bg-[#008657] px-5 py-8 text-center text-white">
-                        {cameraStatus === 'ready' ? (
-                            <>
-                                <p className="text-xl font-black">
-                                    READY TO SCAN
-                                </p>
-                                <p className="mt-2 text-xs">
-                                    Position the attendee's QR code inside the camera frame.
-                                </p>
-                            </>
-                        ) : (
-                            <p className="text-sm font-semibold">
-                                Waiting for camera...
-                            </p>
-                        )}
-                    </div>
+                    </section>
                 )}
 
-                {/* BACK BUTTON */}
-                <button
-                    onClick={goBack}
-                    className="flex w-full items-center justify-center gap-2 border-t border-gray-200 bg-white py-3 text-xs font-bold text-gray-600"
-                >
-                    <ArrowLeft size={15} />
-                    BACK TO EVENT DASHBOARD
-                </button>
+                {/* ALREADY USED RESULT */}
+                {isAlreadyUsed && (
+                    <section className="flex min-h-[430px] flex-col bg-[#F8B900] px-5 pb-5 pt-5 text-center text-black">
+                        <div className="mx-auto flex h-[74px] w-[74px] shrink-0 items-center justify-center rounded-full bg-black">
+                            <AlertTriangle
+                                size={39}
+                                strokeWidth={2.8}
+                                className="text-[#F8B900]"
+                            />
+                        </div>
 
-                <p className="bg-white pb-3 text-center text-[9px] text-gray-400">
-                    TicketLite Gate Check-in
-                </p>
+                        <h2 className="mt-3 text-[32px] font-black leading-[1.05] tracking-tight">
+                            ALREADY
+                            <br />
+                            USED
+                        </h2>
+
+                        <p className="mt-2 text-sm font-bold">
+                            Do not let in. Call a supervisor.
+                        </p>
+
+                        <div className="mt-4 rounded-lg bg-white px-3 py-3 text-left">
+                            <p className="text-xs font-semibold text-gray-600">
+                                Ticket verification
+                            </p>
+
+                            <p className="mt-1 text-sm font-bold text-black">
+                                {scanResult.message}
+                            </p>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={() => void handleScanNext()}
+                            className="mt-auto flex min-h-[43px] w-full cursor-pointer items-center justify-center gap-2 rounded-sm bg-black px-4 py-3 text-xs font-extrabold text-white transition hover:bg-gray-900"
+                        >
+                            <ScanLine size={16} />
+                            SCAN NEXT
+                        </button>
+                    </section>
+                )}
+
+                {/* INVALID RESULT */}
+                {isInvalid && (
+                    <section className="flex min-h-[410px] flex-col bg-[#E92327] px-5 pb-5 pt-5 text-center text-white">
+                        <div className="mx-auto flex h-[74px] w-[74px] shrink-0 items-center justify-center rounded-full bg-white">
+                            <X
+                                size={44}
+                                strokeWidth={3.5}
+                                className="text-[#E92327]"
+                            />
+                        </div>
+
+                        <h2 className="mt-3 text-[40px] font-black leading-none tracking-tight">
+                            INVALID
+                        </h2>
+
+                        <p className="mt-2 text-sm font-bold">
+                            Do not let in
+                        </p>
+
+                        <div className="mt-3 rounded-lg bg-white px-3 py-3 text-left">
+                            <p className="text-xs leading-relaxed text-black">
+                                {scanResult.message}
+                            </p>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={() => void handleScanNext()}
+                            className="mt-auto flex min-h-[43px] w-full cursor-pointer items-center justify-center gap-2 rounded-sm bg-white px-4 py-3 text-xs font-extrabold text-[#E92327] transition hover:bg-gray-100"
+                        >
+                            <ScanLine size={16} />
+                            SCAN NEXT
+                        </button>
+                    </section>
+                )}
+
+                {/* SCANNER INSTRUCTIONS */}
+                {!scanResult && (
+                    <div className="bg-white px-5 py-5 text-center">
+                        <p className="text-xs font-medium text-gray-500">
+                            Position the attendee's QR code inside the
+                            scanning area to verify their ticket.
+                        </p>
+
+                        <p className="mt-2 text-[10px] text-gray-400">
+                            Scans completed this session: {scanCount}
+                        </p>
+                    </div>
+                )}
             </div>
-<p className="text-sm text-muted-foreground">
-    Total scans: {scanCount}
-</p>
-            <style>{`
-                #ticketlite-qr-reader video {
-                    width: 100% !important;
-                    height: 192px !important;
-                    object-fit: cover !important;
-                }
-
-                #ticketlite-qr-reader__dashboard,
-                #ticketlite-qr-reader__header_message {
-                    display: none !important;
-                }
-
-                #ticketlite-qr-reader img {
-                    display: none !important;
-                }
-            `}</style>
         </div>
     )
 }

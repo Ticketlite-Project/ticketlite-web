@@ -20,6 +20,7 @@ import {
     NotFound,
     OrganisersGetAllPage,
     Signup,
+    GateCheckIn,
 } from './routes/lazyPages'
 
 import { createBrowserRouter } from 'react-router'
@@ -197,6 +198,10 @@ export const router = createBrowserRouter([
                             </ProtectedRoute>
                         ),
                     },
+                    {
+    path: '/gate-check-in',
+    element: <GateCheckIn />,
+}
                 ],
             },
 
